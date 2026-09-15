@@ -375,11 +375,11 @@ extern "C" void DrawMarketClosures() {
     for (const auto& door : kDoors) {
         Matrix_Push();
         Matrix_Translate(door.position.x, door.position.y, door.position.z, MTXMODE_NEW);
-        Matrix_RotateY(door.yaw * (M_PI / 32768.0f), MTXMODE_APPLY);
+        Matrix_RotateY(door.yaw * (static_cast<float>(M_PI) / 32768.0f), MTXMODE_APPLY);
         Matrix_Scale(0.01f, 0.01f, 0.01f, MTXMODE_APPLY);
         // Native gDoorSkel's closed pose: hinge at -2700, then limb X=-0x4000.
         Matrix_Translate(-2700.0f, 0.0f, 0.0f, MTXMODE_APPLY);
-        Matrix_RotateX(-M_PI / 2.0f, MTXMODE_APPLY);
+        Matrix_RotateX(-static_cast<float>(M_PI) / 2.0f, MTXMODE_APPLY);
         Vec3f position = door.position;
         const s16 viewAngle = door.yaw - Math_Vec3f_Yaw(&play->view.eye, &position);
         const char* display = std::abs(static_cast<int>(viewAngle)) < 0x4000 ? gFieldDoorLeftDL : gFieldDoorRightDL;
