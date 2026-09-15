@@ -461,3 +461,34 @@ soh/properties.h
 /clang-format
 /clang-format.exe
 *.o2r
+
+# Living Hyrule: private runtime data and build products stay outside this repo.
+# Existing upstream asset headers and source-owned custom assets remain tracked.
+*.[zZ]64
+*.[nN]64
+*.[vV]64
+*.[oO][tT][rR]
+*.[oO]2[rR]
+*.[sS][aA][vV]
+*.[sS][rR][aA]
+*.state
+*.exe
+*.dll
+*.lib
+*.zip
+*.7z
+*.rar
+*.iso
+*.wad
+/runtime/
+/private-assets/
+/extracted-assets/
+/backups/
+/Save/
+/mods/
+/logs/
+/dist/
+/.venv/
+CMakeUserPresets.json
+.env
+.env.*

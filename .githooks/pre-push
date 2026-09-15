@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+cd "$(git rev-parse --show-toplevel)"
+python_path=$(git config --get livinghyrule.python || printf '%s' python)
+exec "$python_path" tools/living-hyrule/check_repository.py --push
