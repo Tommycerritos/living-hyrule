@@ -137,7 +137,7 @@ enum class WardrobeVisualStatus : uint8_t {
     Unavailable,
     Unreadable,
     CosmeticOverride,
-    CustomModel,
+    CustomModelTint,
     NetworkAppearance,
 };
 struct WardrobeVisualContext {
@@ -163,8 +163,15 @@ inline WardrobeVisualStatus EvaluateRegionalWardrobe(const WardrobeState* wardro
     if (context.cosmeticOverride)
         return WardrobeVisualStatus::CosmeticOverride;
     if (context.customModel)
-        return WardrobeVisualStatus::CustomModel;
+        return WardrobeVisualStatus::CustomModelTint;
     return WardrobeVisualStatus::Active;
+}
+
+constexpr bool RegionalWardrobeAppliesColor(WardrobeVisualStatus status) {
+    // Custom models already receive the native tunic environment color from
+    // Player_DrawImpl. A dye may use that same per-draw channel safely; models
+    // with fixed-color materials simply do not consume the tint.
+    return status == WardrobeVisualStatus::Active || status == WardrobeVisualStatus::CustomModelTint;
 }
 
 } // namespace LivingHyrule

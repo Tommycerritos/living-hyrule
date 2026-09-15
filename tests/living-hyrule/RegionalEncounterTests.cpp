@@ -1,7 +1,11 @@
 #include "RegionalEncounterPolicy.h"
+#include "GraphicsCompatibilityPolicy.h"
 
+#include <array>
 #include <iostream>
 #include <limits>
+#include <map>
+#include <string>
 
 namespace {
 using namespace LivingHyrule;
@@ -176,6 +180,51 @@ void TestLeeverTerminalDeath() {
         CHECK(FinishRegionalLeeverDeath(newVisit, true) == RegionalLeeverCompletion::KillAndNotify);
     }
 }
+
+void TestGraphicsPacks() {
+    const std::array<std::string, 4> required = { "enemy/skeleton", "enemy/limb", "enemy/animation",
+                                                  "scene/collision" };
+    std::map<std::string, NativeGraphicsResource> resources;
+    for (const auto& path : required)
+        resources[path] = { true, true, false, false };
+    const auto lookup = [&resources](const auto& path) {
+        const auto found = resources.find(path);
+        return found != resources.end() ? found->second : NativeGraphicsResource{};
+    };
+    // HD textures and a custom Link rig must not disable unrelated encounters.
+    resources["enemy/texture"] = { true, false, true, true };
+    resources["scene/texture"] = { true, false, true, true };
+    resources["link/skeleton"] = { true, false, true, true };
+    for (bool alternatives : { false, true })
+        CHECK(NativeEncounterGraphicsAvailable(required, alternatives, lookup));
+    for (const auto& path : required) {
+        for (bool alternatives : { false, true }) {
+            resources.erase(path);
+            CHECK(!NativeEncounterGraphicsAvailable(required, alternatives, lookup));
+            // Binary structural replacements and .meta aliases need the same
+            // protection as XML models, regardless of the global preference.
+            resources[path] = { true, false, false, false };
+            CHECK(!NativeEncounterGraphicsAvailable(required, alternatives, lookup));
+            resources[path] = { true, true, true, false };
+            CHECK(!NativeEncounterGraphicsAvailable(required, alternatives, lookup));
+            resources[path] = { true, true, false, true };
+            CHECK(NativeEncounterGraphicsAvailable(required, alternatives, lookup) == !alternatives);
+        }
+        resources[path] = { true, true, false, false };
+    }
+    // Switching a pack during an encounter cannot re-arm the once-per-entry
+    // budget, even if compatibility returns after the pack is disabled.
+    RegionalEncounterBudget budget;
+    const auto context = Ready(EncounterPlace::Trail);
+    for (int tick = 0; tick < 20; ++tick)
+        AdvanceRegionalEncounterGrace(budget);
+    CHECK(ConsumeRegionalEncounterAttempt(budget, context, true, true));
+    resources[required[0]].alternatePresent = true;
+    for (bool alternatives : { true, false, true, false }) {
+        CHECK(NativeEncounterGraphicsAvailable(required, alternatives, lookup) == !alternatives);
+        CHECK(!ConsumeRegionalEncounterAttempt(budget, context, true, true));
+    }
+}
 } // namespace
 
 int main() {
@@ -183,10 +232,11 @@ int main() {
     TestEntryBudget();
     TestPocketAndNativeWindow();
     TestLeeverTerminalDeath();
+    TestGraphicsPacks();
     if (failures != 0) {
         std::cerr << failures << " of " << checks << " regional encounter checks failed\n";
         return 1;
     }
-    std::cout << checks << " regional encounter gates, budgets, bounds and native-death checks passed\n";
+    std::cout << checks << " regional encounter gates, budgets, bounds, graphics and native-death checks passed\n";
     return 0;
 }

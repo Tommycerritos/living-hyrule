@@ -172,7 +172,7 @@ Eight dyes can be bought with bank rupees while visiting the matching region
 after its existing trade/recovery gate opens. Once owned, a dye can be selected
 freely anywhere and in either age; original appearance is always available.
 Purchasing does not automatically equip it. These are clothing and hat colors
-on Link's native model, with no new meshes, weapons, shields or resistance effects.
+for Link, with no new meshes, weapons, shields or resistance effects.
 
 | Region | Dye | Price in bank rupees |
 | --- | --- | ---: |
@@ -187,9 +187,32 @@ on Link's native model, with no new meshes, weapons, shields or resistance effec
 
 The render hook changes a temporary color for the current player or equipment
 preview draw. It does not modify the shared tunic palette, actual equipped tunic,
-protection rules or user CVars. An active tunic cosmetic override, a custom Link
-model or a connected Anchor appearance takes priority; the purchased selection
-is retained and the ledger explains why it is not currently displayed.
+protection rules or user CVars. Custom Link models receive the same temporary
+tunic color; models with fixed-color textures may not display the tint. An active
+tunic cosmetic override or a connected Anchor appearance takes priority; the
+purchased selection is retained and the ledger explains its current status.
+
+### Graphics-pack compatibility
+
+Texture-only packs and the global alternate-assets preference do not disable
+regional encounters. Each encounter checks its own skeleton, limbs, every native
+animation and the scene collision. Base structural resources must come from a
+versioned game archive, without metadata aliases; active alternate structural
+resources exclude that encounter. Binary model replacements receive the same
+checks as XML models. Changes to unrelated models, including Link, are allowed.
+
+The native rig must fit its embedded pose tables and contain the currently
+resolved native limbs. This rejects a cached rig still holding alternate limbs
+after a pack toggle. Each added enemy keeps its rig fixed for its short lifetime;
+texture toggles still apply. A newly incompatible live encounter is removed before
+its next native update, while an already dying enemy finishes its native breakup
+and reward sequence. Pack toggles do not reset the once-per-entry attempt budget.
+
+Automated policy tests cover texture-only packs, unrelated Link models, missing
+resources, binary overrides, metadata aliases and alternate structural assets.
+Read-only archive tests verify native rig sizes and complete animation coverage.
+No third-party pack or in-game visual result has been tested in this checkpoint.
+Enemy/scene model overhauls are outside the texture-only compatibility claim.
 
 ### Regional charters and treasuries
 

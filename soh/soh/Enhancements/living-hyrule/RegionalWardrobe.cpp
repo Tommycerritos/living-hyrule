@@ -78,7 +78,7 @@ void ApplyRegionalColor(GIVanillaBehavior, bool* should, va_list originalArgs) {
     if (!context.localPlayerOrPreview)
         return;
     const WardrobeState* wardrobe = GetRegionalWardrobeStateForSave();
-    if (EvaluateRegionalWardrobe(wardrobe, context) != WardrobeVisualStatus::Active)
+    if (!RegionalWardrobeAppliesColor(EvaluateRegionalWardrobe(wardrobe, context)))
         return;
     const auto& dye = GetRegionalStyle(wardrobe->equippedStyle)->color;
     // This pointer addresses Player_DrawImpl's stack copy, never sTunicColors,
@@ -110,8 +110,9 @@ const char* RegionalWardrobeVisualStatusText(WardrobeVisualStatus status) {
             return "This wardrobe could not be read. Its stored data must be preserved.";
         case WardrobeVisualStatus::CosmeticOverride:
             return "Your existing tunic cosmetic color takes priority. The regional dye remains selected.";
-        case WardrobeVisualStatus::CustomModel:
-            return "Your custom Link model takes priority. Regional dyes use the native clothing model.";
+        case WardrobeVisualStatus::CustomModelTint:
+            return "Your regional dye is applied through this model's tunic color. Models with fixed-color textures "
+                   "may not display the tint. Existing cosmetic colors still take priority.";
         case WardrobeVisualStatus::NetworkAppearance:
             return "Anchor's player color takes priority while connected. Your regional dye remains selected.";
         default:

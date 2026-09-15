@@ -178,6 +178,7 @@ void TestDrawCompatibilityAndSnapshots() {
                                            (flags & 8) != 0, (flags & 16) != 0, (flags & 32) != 0 };
         const auto result = EvaluateRegionalWardrobe(&wardrobe, trial);
         CHECK((result == WardrobeVisualStatus::Active) == (flags == 7));
+        CHECK(RegionalWardrobeAppliesColor(result) == (flags == 7 || flags == 23));
         CHECK(SameWardrobe(wardrobe, snapshot)); // Conflicts do not erase ownership/selection.
     }
     auto conflict = context;
@@ -185,7 +186,13 @@ void TestDrawCompatibilityAndSnapshots() {
     CHECK(EvaluateRegionalWardrobe(&wardrobe, conflict) == WardrobeVisualStatus::NetworkAppearance);
     conflict = context;
     conflict.customModel = true;
-    CHECK(EvaluateRegionalWardrobe(&wardrobe, conflict) == WardrobeVisualStatus::CustomModel);
+    CHECK(EvaluateRegionalWardrobe(&wardrobe, conflict) == WardrobeVisualStatus::CustomModelTint);
+    CHECK(RegionalWardrobeAppliesColor(EvaluateRegionalWardrobe(&wardrobe, conflict)));
+    conflict.cosmeticOverride = true;
+    CHECK(!RegionalWardrobeAppliesColor(EvaluateRegionalWardrobe(&wardrobe, conflict)));
+    conflict.cosmeticOverride = false;
+    conflict.anchorConnected = true;
+    CHECK(!RegionalWardrobeAppliesColor(EvaluateRegionalWardrobe(&wardrobe, conflict)));
     conflict = context;
     conflict.cosmeticOverride = true;
     CHECK(EvaluateRegionalWardrobe(&wardrobe, conflict) == WardrobeVisualStatus::CosmeticOverride);

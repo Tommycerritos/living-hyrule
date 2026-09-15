@@ -180,15 +180,25 @@ def validate_site(archive, name, values):
 
 
 def validate_resources(archive):
+    require("version" in archive.namelist() and len(archive.read("version")) == 5,
+            "Encounter resources must come from a versioned game archive")
+    runtime = (ROOT / "soh/soh/Enhancements/living-hyrule/RegionalEncounters.cpp").read_text(encoding="utf-8")
     for family, skeleton, joints in (("object_tite", "object_tite_Skel_003A20", 25),
                                       ("object_reeba", "object_reeba_Skel_001EE8", 18)):
+        actor = "En_Tite" if family == "object_tite" else "En_Reeba"
+        native = (ROOT / "soh/src/overlays/actors" / ("ovl_" + actor) / ("z_" + actor.lower() + ".c")).read_text(encoding="utf-8")
+        animations = set(re.findall(family + r"_Anim_[0-9A-F]+", native))
+        guarded = set(re.findall(family + r"_Anim_[0-9A-F]+", runtime))
+        require(animations and animations == guarded,
+                "Compatibility guard must cover every animation used by " + actor)
         header = (ROOT / "soh/assets/objects" / family / (family + ".h")).read_text(encoding="utf-8")
         paths = re.findall(r'"__OTR__([^\"]+)"', header)
         require(paths, "Missing native resource declarations")
         for path in paths:
             require(path in archive.namelist() and len(archive.read(path)) > 64, "Missing native enemy asset " + path)
         reader = Reader(archive.read("objects/" + family + "/" + skeleton))
-        reader.read("BB")
+        skeleton_type, _ = reader.read("BB")
+        require(skeleton_type == 0, "Encounter enemy no longer uses a normal native skeleton")
         limb_count = reader.read("I")
         reader.read("IB")
         count = reader.read("I")

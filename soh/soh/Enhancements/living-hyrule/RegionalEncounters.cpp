@@ -1,17 +1,23 @@
 #include "RegionalEncounters.h"
 #include "RegionalEncounterPolicy.h"
+#include "GraphicsCompatibilityPolicy.h"
 
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 #include "soh/Network/Anchor/Anchor.h"
 #include "soh/ResourceManagerHelpers.h"
 #include "soh/ShipInit.hpp"
+#include "soh/resource/type/Skeleton.h"
 #include "soh/cvar_prefixes.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <string>
 #include <libultraship/bridge/consolevariablebridge.h>
 #include <libultraship/bridge/resourcebridge.h>
+#include <ship/Context.h>
+#include <ship/resource/ResourceManager.h>
+#include <ship/resource/archive/Archive.h>
 
 extern "C" {
 #include "functions.h"
@@ -37,6 +43,7 @@ struct OwnedEncounter {
     int32_t file = -1;
     uint32_t spawnedAt = 0;
     RegionalLeeverDeath leeverDeath;
+    bool graphicsCompatible = true;
 };
 
 OwnedEncounter owned;
@@ -98,7 +105,6 @@ RegionalEncounterContext CurrentContext() {
                             CVarGetInteger(CVAR_ENHANCEMENT("RandomizedEnemySizes"), 0) != 0 ||
                             CVarGetInteger(CVAR_ENHANCEMENT("HyperEnemies"), 0) != 0 ||
                             CVarGetInteger(CVAR_ENHANCEMENT("LeeverSpawnRate"), 0) != 0 ||
-                            ResourceMgr_IsAltAssetsEnabled() ||
                             (Anchor::Instance != nullptr && Anchor::Instance->isConnected);
     context.adult = LINK_IS_ADULT;
     context.daytime = IS_DAY;
@@ -130,21 +136,52 @@ bool NativeWindow(PlayState* play, const RegionalEncounterSite& site, bool start
     return site.enemy != RegionalEnemyKind::SmallLeever || foundLeeverSpawner;
 }
 
-bool OriginalAssets(PlayState* play, const RegionalEncounterSite& site) {
+NativeGraphicsResource InspectStructuralResource(const std::string& name) {
+    const std::string path = name.starts_with("__OTR__") ? name.substr(7) : name;
+    const auto archives = Ship::Context::GetRawInstance()->GetResourceManager()->GetArchiveManager();
+    const auto archive = archives->GetArchiveFromFile(path);
+    // A binary model replacement can report IsCustom=false. Check the owning
+    // archive and .meta aliases as well, before loading any replacement data.
+    return { archive != nullptr, archive != nullptr && archive->HasGameVersion(), archives->HasFile(path + ".meta"),
+             archives->HasFile("alt/" + path) || archives->HasFile("alt/" + path + ".meta") };
+}
+
+bool CompatibleAssets(PlayState* play, const RegionalEncounterSite& site) {
     const s16 objectId = site.enemy == RegionalEnemyKind::SmallLeever ? OBJECT_REEBA : OBJECT_TITE;
     const int bank = Object_GetIndex(&play->objectCtx, objectId);
     if (bank < 0 || !Object_IsLoaded(&play->objectCtx, bank))
         return false;
     const char* skeleton =
         site.enemy == RegionalEnemyKind::SmallLeever ? object_reeba_Skel_001EE8 : object_tite_Skel_003A20;
-    const char* animation =
-        site.enemy == RegionalEnemyKind::SmallLeever ? object_reeba_Anim_0001E4 : object_tite_Anim_0012E4;
     const char* collision =
         site.place == EncounterPlace::Trail   ? "scenes/shared/spot16_scene/spot16_sceneCollisionHeader_003D10"
         : site.place == EncounterPlace::River ? "scenes/shared/spot03_scene/spot03_sceneCollisionHeader_006580"
                                               : "scenes/shared/spot11_scene/spot11_sceneCollisionHeader_004EE4";
-    for (const char* resource : { skeleton, animation, collision }) {
-        if (!ResourceMgr_FileExists(resource) || ResourceGetIsCustomByName(resource))
+    const bool alternatives = ResourceMgr_IsAltAssetsEnabled();
+    const std::array<const char*, 2> structure = { skeleton, collision };
+    // Include every animation used during this native enemy's lifetime, not
+    // just its initial idle. Alternate textures and Link models remain free.
+    const std::array<const char*, 6> tektiteAnimations = {
+        object_tite_Anim_0004F8, object_tite_Anim_00069C, object_tite_Anim_00083C,
+        object_tite_Anim_000A14, object_tite_Anim_000C70, object_tite_Anim_0012E4,
+    };
+    const std::array<const char*, 1> leeverAnimations = { object_reeba_Anim_0001E4 };
+    if (!NativeEncounterGraphicsAvailable(structure, alternatives, InspectStructuralResource) ||
+        !(site.enemy == RegionalEnemyKind::SmallLeever
+              ? NativeEncounterGraphicsAvailable(leeverAnimations, alternatives, InspectStructuralResource)
+              : NativeEncounterGraphicsAvailable(tektiteAnimations, alternatives, InspectStructuralResource)))
+        return false;
+    const auto rig = std::dynamic_pointer_cast<SOH::Skeleton>(ResourceMgr_GetResourceByNameHandlingMQ(skeleton));
+    const size_t limbs = site.enemy == RegionalEnemyKind::SmallLeever ? 17 : 24;
+    if (rig == nullptr || rig->type != SOH::SkeletonType::Normal || rig->limbCount != limbs ||
+        rig->limbTable.size() != limbs || rig->skeletonHeaderSegments.size() != limbs ||
+        !NativeEncounterGraphicsAvailable(rig->limbTable, alternatives, InspectStructuralResource))
+        return false;
+    for (size_t i = 0; i < limbs; ++i) {
+        const auto limb = ResourceMgr_GetResourceByNameHandlingMQ(rig->limbTable[i].c_str());
+        // A native skeleton cached while alternate limbs were enabled can still
+        // hold those pointers after the pack is disabled. Do not reuse that rig.
+        if (limb == nullptr || limb->GetRawPointer() != rig->skeletonHeaderSegments[i])
             return false;
     }
     return true;
@@ -242,8 +279,8 @@ void BeforeEnemyUpdate(void* pointer, bool* shouldUpdate) {
     const auto context = CurrentContext();
     const auto& site = *owned.site;
     const auto& position = actor->world.pos;
-    const bool retained = RegionalEncounterAllowed(context) && context.place == site.place &&
-                          owned.file == gSaveContext.fileNum &&
+    const bool retained = owned.graphicsCompatible && RegionalEncounterAllowed(context) &&
+                          context.place == site.place && owned.file == gSaveContext.fileNum &&
                           gPlayState->gameplayFrames - owned.spawnedAt < site.lifetime &&
                           InsideRegionalEncounterPocket(site, position.x, position.y, position.z) &&
                           NativeWindow(gPlayState, site, false) && ActorsClear(gPlayState, site, position, false) &&
@@ -302,7 +339,7 @@ void UpdateRegionalEncounters() {
             NativeWindow(gPlayState, *site, true)))
         return;
     const Vec3f position = { site->x, site->y, site->z };
-    if (!OriginalAssets(gPlayState, *site) || !GroundClear(gPlayState, *site, site->x, site->z, true) ||
+    if (!CompatibleAssets(gPlayState, *site) || !GroundClear(gPlayState, *site, site->x, site->z, true) ||
         !ActorsClear(gPlayState, *site, position, true) || Flags_GetClear(gPlayState, 0))
         return;
     const s16 id = site->enemy == RegionalEnemyKind::SmallLeever ? ACTOR_EN_REEBA : ACTOR_EN_TITE;
@@ -316,6 +353,12 @@ void UpdateRegionalEncounters() {
     if (actor == nullptr)
         return;
     owned = { actor, gPlayState, site, id, gSaveContext.fileNum, gPlayState->gameplayFrames, {} };
+    // Keep this short-lived native rig fixed if the owner toggles a model pack
+    // mid-encounter. Texture changes still apply. Native death/BodyBreak can
+    // finish using the original pose tables without the global skeleton patcher
+    // swapping a different rig into their embedded buffers.
+    ResourceMgr_UnregisterSkeleton(id == ACTOR_EN_TITE ? &reinterpret_cast<EnTite*>(actor)->skelAnime
+                                                       : &reinterpret_cast<EnReeba*>(actor)->skelanime);
     // Remove only this added instance from vanilla enemy-room accounting. Set
     // room first so changing category cannot set the original temporary-clear.
     actor->room = -1;
@@ -346,6 +389,10 @@ void RegisterRegionalEncounters() {
     });
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayDestroy>([] { tearingDown = true; });
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(UpdateRegionalEncounters);
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnAssetAltChange>([] {
+        if (IsRegionalEncounterActor(owned.actor) && !tearingDown)
+            owned.graphicsCompatible = CompatibleAssets(gPlayState, *owned.site);
+    });
     GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnActorUpdate>(ACTOR_EN_REEBA, AfterLeeverUpdate);
     GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnEnemyDefeat>(ACTOR_EN_REEBA, [](void* actor) {
         if (actor == owned.actor)

@@ -367,14 +367,13 @@ void LivingHyruleWindow::DrawWardrobe(Status& status) {
     ImGui::Separator();
     if (!ImGui::CollapsingHeader("Regional clothing dyes"))
         return;
-    ImGui::TextWrapped(
-        "Buy local cloth colors while visiting their region, then switch freely between owned "
-        "dyes. They color Link's native clothing and hat in both ages. Equipment protection stays the same.");
+    ImGui::TextWrapped("Buy local cloth colors while visiting their region, then switch freely between owned "
+                       "dyes. They color Link's clothing and hat in both ages. Equipment protection stays the same.");
     ImGui::TextWrapped("%s", RegionalWardrobeVisualStatusText(GetRegionalWardrobeVisualStatus()));
     DrawActionButton("Use original appearance", Action::EquipDye, 0,
                      !status.economy.enabled || status.economy.wardrobe.equippedStyle == 0, status);
-    ImGui::TextWrapped(
-        "Existing custom Link models, tunic cosmetic colors and connected Anchor appearances take priority.");
+    ImGui::TextWrapped("Custom models can use the dye if their clothing supports tunic colors. Existing tunic cosmetic "
+                       "colors and connected Anchor appearances take priority.");
     for (const auto& style : kRegionalStyles) {
         const auto id = static_cast<uint8_t>(style.id);
         ImGui::PushID(1000 + static_cast<int>(id));

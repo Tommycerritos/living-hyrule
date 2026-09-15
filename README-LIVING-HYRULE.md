@@ -36,8 +36,9 @@ the original adventure:
   interiors, alleys and the castle remain closed or unfinished.
 - Short walking routines for Pella in the Market and Edda at Lake Hylia. They
   wait when a route is blocked or a conversation needs their attention.
-- Eight purchasable regional cloth dyes for Link's native clothing in both ages.
-  Original equipment protection, custom models and cosmetic settings are preserved.
+- Eight purchasable regional cloth dyes for Link's clothing in both ages, including
+  custom models that support tunic colors. Original equipment protection and
+  explicit cosmetic settings are preserved.
 - Eight regional charters, local treasury transfers, business dues and resident
   recognition, culminating in the title **High Steward of Hyrule**.
 - An **18,000-rupee Domain restoration** after the Water Medallion and the Water

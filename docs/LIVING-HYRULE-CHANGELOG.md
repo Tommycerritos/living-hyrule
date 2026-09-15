@@ -1,5 +1,21 @@
 # Living Hyrule changelog
 
+## 2026-09-15 - Graphics-pack compatibility
+
+- Removed the blanket alternate-assets exclusion from added encounters. Texture
+  packs and unrelated Link models now pass; checks target the encounter's actual
+  native rig, limbs, animations and collision, including binary and metadata
+  replacements. Story gates, original enemy overrides and spawn budgets remain.
+- Fixed the added enemy's rig for its lifetime and rechecked compatibility on
+  asset toggles. Native death/breakup finishes; toggling cannot replenish spawns.
+- Applied regional dyes through the existing tunic-color channel with custom
+  Link models. Fixed-color textures may ignore the tint. Explicit cosmetic
+  colors and connected Anchor appearances still take priority.
+- Added graphics-pack policy coverage and verified the animation manifest and
+  rig shape against the local native archive. Save schema remains five.
+- Third-party packs and gameplay visuals require owner testing. This change
+  does not install a texture pack or alter FPS, resolution, saves or preferences.
+
 ## 2026-09-15 - Kingdom recovery and royal estate (schema five; installed)
 
 - Added an 18,000-bank-rupee Domain restoration after the Water Medallion and
