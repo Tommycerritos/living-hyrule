@@ -223,7 +223,7 @@ void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
     if (IsForestMountainResidentActor(actor) && GetForestMountainResidentId(actor) == id && actor->update != nullptr) {
         auto* resident = reinterpret_cast<ForestMountainActor*>(actor);
         text = reply ? std::string(resident->trade.response)
-                     : BuildDialogue(id) + DescribeTradeOffer(resident->trade.offer);
+                     : DescribeResidentDialogue(actor, resident->trade, BuildDialogue(id));
     }
     CustomMessage message(text);
     message.AutoFormat();
@@ -234,9 +234,11 @@ void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
 u16 GetTextId(PlayState* play, Actor* actor) {
     const auto textId = static_cast<u16>(kFirstText + actor->params);
     auto* resident = reinterpret_cast<ForestMountainActor*>(actor);
-    if (resident->talkState == NPC_TALK_STATE_IDLE && !PlayerOwnsTalk(play, actor))
+    if (resident->talkState == NPC_TALK_STATE_IDLE && !PlayerOwnsTalk(play, actor)) {
         PreparePropertyTrade(resident->trade,
                              ForestMountainPropertyId(static_cast<ForestMountainResidentId>(actor->params)), textId);
+        PrepareResidentDialogue(resident->trade, actor);
+    }
     return textId;
 }
 

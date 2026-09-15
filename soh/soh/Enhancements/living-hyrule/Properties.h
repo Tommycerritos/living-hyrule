@@ -84,6 +84,22 @@ inline bool RegionOpen(Region region, const WorldProgress& world) {
 inline bool OwnsProperty(const EconomyState& state, uint32_t id) {
     return id < kProperties.size() && (state.ownedProperties & (1u << id)) != 0;
 }
+inline constexpr std::array<ResidentId, 16> kPropertyManagers = {
+    ResidentId::Vessa, ResidentId::Hadrin, ResidentId::Caro,  ResidentId::Hollis, ResidentId::Nessa, ResidentId::Wren,
+    ResidentId::Fenn,  ResidentId::Luma,   ResidentId::Count, ResidentId::Tavin,  ResidentId::Doron, ResidentId::Brakka,
+    ResidentId::Vero,  ResidentId::Lethra, ResidentId::Rasha, ResidentId::Kesra,
+};
+constexpr ResidentId PropertyManager(uint32_t id) {
+    return id < kPropertyManagers.size() ? kPropertyManagers[id] : ResidentId::Count;
+}
+inline uint32_t EffectiveRepairPrice(const EconomyState& state, uint32_t id) {
+    if (!IsValidState(state) || id >= kProperties.size())
+        return 0;
+    const uint32_t price = kProperties[id].repairCost;
+    return GetRapport(state, PropertyManager(id)) >= kTrustedRapport
+               ? static_cast<uint32_t>((static_cast<uint64_t>(price) * 90u) / 100u)
+               : price;
+}
 inline bool PropertyOperating(const EconomyState& state, uint32_t id, const WorldProgress& world) {
     return OwnsProperty(state, id) && RegionOpen(kProperties[id].region, world) &&
            (!world.adult || (state.repairedProperties & (1u << id)) != 0);
@@ -118,10 +134,13 @@ inline Result RepairProperty(EconomyState& state, uint32_t id, const WorldProgre
         return Result::Unavailable;
     if ((state.repairedProperties & (1u << id)) != 0)
         return Result::AlreadyRepaired;
-    if (state.bankRupees < kProperties[id].repairCost)
+    const uint32_t repairPrice = EffectiveRepairPrice(state, id);
+    if (state.bankRupees < repairPrice)
         return Result::InsufficientBank;
-    state.bankRupees -= kProperties[id].repairCost;
+    state.bankRupees -= repairPrice;
     state.repairedProperties |= 1u << id;
+    if (repairPrice != 0 && IsValidResident(PropertyManager(id)))
+        AdjustRapport(state, PropertyManager(id), 5);
     return Result::Success;
 }
 

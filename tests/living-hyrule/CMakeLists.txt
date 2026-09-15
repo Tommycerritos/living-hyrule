@@ -94,7 +94,7 @@ else()
 endif()
 add_test(NAME living_hyrule_world_population_tests COMMAND living_hyrule_world_population_tests)
 
-foreach(suite IN ITEMS Scenery ForestMountain WaterDesert)
+foreach(suite IN ITEMS Scenery ForestMountain WaterDesert Social RoyalAudience MarketRestoration)
     string(TOLOWER "${suite}" suite_lower)
     set(target_name "living_hyrule_${suite_lower}_tests")
     add_executable(${target_name} "${suite}Tests.cpp")
@@ -110,3 +110,16 @@ foreach(suite IN ITEMS Scenery ForestMountain WaterDesert)
     endif()
     add_test(NAME ${target_name} COMMAND ${target_name})
 endforeach()
+
+# Optional read-only checks against the owner's existing local archive. CI and
+# source-only checkouts still run every pure suite without any Nintendo assets.
+set(LIVING_HYRULE_NATIVE_ARCHIVE "" CACHE FILEPATH "Local oot.o2r for offline resource checks")
+if(LIVING_HYRULE_NATIVE_ARCHIVE)
+    if(NOT EXISTS "${LIVING_HYRULE_NATIVE_ARCHIVE}")
+        message(FATAL_ERROR "The selected local native archive does not exist")
+    endif()
+    find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    add_test(NAME living_hyrule_market_resources
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MarketRestorationResourceTests.py"
+                "${LIVING_HYRULE_NATIVE_ARCHIVE}")
+endif()

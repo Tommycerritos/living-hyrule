@@ -6,7 +6,7 @@ namespace {
 using namespace LivingHyrule;
 int checks = 0;
 int failures = 0;
-void Check(bool condition, const char *message) {
+void Check(bool condition, const char* message) {
     ++checks;
     if (!condition) {
         ++failures;
@@ -70,7 +70,7 @@ void StoryAndSchedules() {
 }
 
 void LedgerSafety() {
-    for (const bool daytime : {false, true}) {
+    for (const bool daytime : { false, true }) {
         auto context = Audience(daytime);
         context.economy.enabled = 0;
         Check(RoyalResidentMaskFor(context) == 0, "paused economy also pauses the optional postgame audience");

@@ -1,7 +1,9 @@
 #include "Economy.h"
 
+#include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <iterator>
 #include <limits>
 #include <random>
 
@@ -20,9 +22,15 @@ void Check(bool condition, const char* expression, int line) {
 
 bool Equal(const EconomyState& a, const EconomyState& b) {
     // Compare fields, not padding bytes in the C-compatible save struct.
-    return a.enabled == b.enabled && a.bankRupees == b.bankRupees &&
-           a.ownsKakarikoCottage == b.ownsKakarikoCottage && a.rentalFrames == b.rentalFrames &&
-           a.totalRentEarned == b.totalRentEarned;
+    return a.enabled == b.enabled && a.bankRupees == b.bankRupees && a.ownsKakarikoCottage == b.ownsKakarikoCottage &&
+           a.rentalFrames == b.rentalFrames && a.totalRentEarned == b.totalRentEarned &&
+           a.ownedProperties == b.ownedProperties && a.repairedProperties == b.repairedProperties &&
+           a.totalBusinessEarned == b.totalBusinessEarned &&
+           std::equal(std::begin(a.businessFrames), std::end(a.businessFrames), std::begin(b.businessFrames)) &&
+           std::equal(std::begin(a.rapport), std::end(a.rapport), std::begin(b.rapport)) &&
+           a.metResidents == b.metResidents && a.completedFavors == b.completedFavors &&
+           a.activeFavor == b.activeFavor && a.cottageRentPolicy == b.cottageRentPolicy &&
+           a.currentPeriodPolicy == b.currentPeriodPolicy && a.marketRestored == b.marketRestored;
 }
 
 EconomyState Enabled(uint64_t bank = 0) {
@@ -58,10 +66,8 @@ void TestValidationAndAtomicFailures() {
 
     for (Transfer operation : { Deposit, Withdraw }) {
         RejectTransfer(operation, Enabled(500), 50, 99, 0, Result::InvalidAmount);
-        RejectTransfer(operation, Enabled(500), 50, 99, static_cast<uint32_t>(kBankLimit + 1),
-                       Result::InvalidAmount);
-        RejectTransfer(operation, Enabled(500), 50, 99, (std::numeric_limits<uint32_t>::max)(),
-                       Result::InvalidAmount);
+        RejectTransfer(operation, Enabled(500), 50, 99, static_cast<uint32_t>(kBankLimit + 1), Result::InvalidAmount);
+        RejectTransfer(operation, Enabled(500), 50, 99, (std::numeric_limits<uint32_t>::max)(), Result::InvalidAmount);
         RejectTransfer(operation, Enabled(500), -1, 99, 1, Result::InvalidWallet);
         RejectTransfer(operation, Enabled(500), 0, -1, 1, Result::InvalidWallet);
         RejectTransfer(operation, Enabled(500), 0, 32768, 1, Result::InvalidWallet);
@@ -71,10 +77,18 @@ void TestValidationAndAtomicFailures() {
     for (int invalidField = 0; invalidField < 4; ++invalidField) {
         EconomyState corrupt = Enabled(5000);
         switch (invalidField) {
-            case 0: corrupt.enabled = 2; break;
-            case 1: corrupt.ownsKakarikoCottage = 2; break;
-            case 2: corrupt.bankRupees = kBankLimit + 1; break;
-            case 3: corrupt.rentalFrames = kFramesPerRentPeriod; break;
+            case 0:
+                corrupt.enabled = 2;
+                break;
+            case 1:
+                corrupt.ownsKakarikoCottage = 2;
+                break;
+            case 2:
+                corrupt.bankRupees = kBankLimit + 1;
+                break;
+            case 3:
+                corrupt.rentalFrames = kFramesPerRentPeriod;
+                break;
         }
         CHECK(!IsValidState(corrupt));
         RejectTransfer(Deposit, corrupt, 50, 99, 1, Result::InvalidState);
@@ -133,8 +147,7 @@ void TestPurchaseAndRent() {
         CHECK(state.rentalFrames == frame && state.bankRupees == 0 && state.totalRentEarned == 0);
     }
     CHECK(TickRent(state) == kRentPerPeriod);
-    CHECK(state.rentalFrames == 0 && state.bankRupees == kRentPerPeriod &&
-          state.totalRentEarned == kRentPerPeriod);
+    CHECK(state.rentalFrames == 0 && state.bankRupees == kRentPerPeriod && state.totalRentEarned == kRentPerPeriod);
     for (uint32_t frame = 1; frame < kFramesPerRentPeriod; ++frame) {
         CHECK(TickRent(state) == 0);
     }
@@ -240,6 +253,73 @@ void TestRandomizedConservation() {
     }
 }
 
+void TestRentTermsAndRapport() {
+    auto state = Enabled(kCottagePrice);
+    CHECK(BuyCottage(state) == Result::Success);
+    CHECK(EffectiveCottageRent(state) == 25);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(SetCottageRentPolicy(state, true) == Result::Success);
+    CHECK(state.currentPeriodPolicy == 0 && state.cottageRentPolicy == 1);
+    CHECK(TickRent(state) == 25);
+    CHECK(GetRapport(state, ResidentId::Bram) == 1 && state.currentPeriodPolicy == 1);
+    CHECK(EffectiveCottageRent(state) == 40);
+    for (int period = 0; period < 4; ++period) {
+        state.rentalFrames = kFramesPerRentPeriod - 1;
+        CHECK(TickRent(state) == 40);
+    }
+    CHECK(GetRapport(state, ResidentId::Bram) == -11);
+    CHECK(EffectiveCottageRent(state) == 15);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    for (int toggle = 0; toggle < 100; ++toggle)
+        CHECK(SetCottageRentPolicy(state, (toggle % 2) != 0) == Result::Success);
+    CHECK(SetCottageRentPolicy(state, false) == Result::Success);
+    CHECK(TickRent(state) == 15); // Last high period cannot be rewritten by the toggle.
+    CHECK(GetRapport(state, ResidentId::Bram) == -14 && state.currentPeriodPolicy == 0);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(TickRent(state) == 25);
+    CHECK(GetRapport(state, ResidentId::Bram) == -13);
+
+    CHECK(AdjustRapport(state, ResidentId::Bram, 32) == Result::Success);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(TickRent(state) == 25);
+    CHECK(GetRapport(state, ResidentId::Bram) == 20);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(TickRent(state) == 25 && GetRapport(state, ResidentId::Bram) == 20);
+    CHECK(AdjustRapport(state, ResidentId::Bram, 40) == Result::Success);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(TickRent(state) == 25 && GetRapport(state, ResidentId::Bram) == 60);
+
+    state.bankRupees = kBankLimit;
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(SetCottageRentPolicy(state, true) == Result::Success);
+    CHECK(TickRent(state) == 0);
+    CHECK(GetRapport(state, ResidentId::Bram) == 60 && state.currentPeriodPolicy == 1);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(TickRent(state) == 0 && GetRapport(state, ResidentId::Bram) == 60);
+    state.bankRupees = kBankLimit - 1;
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    CHECK(TickRent(state) == 1 && GetRapport(state, ResidentId::Bram) == 57);
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    state.enabled = 0;
+    const auto disabled = state;
+    CHECK(SetCottageRentPolicy(state, false) == Result::Disabled);
+    CHECK(TickRent(state) == 0 && Equal(state, disabled));
+    state = Enabled();
+    const auto unowned = state;
+    CHECK(SetCottageRentPolicy(state, true) == Result::NotOwned && Equal(state, unowned));
+
+    // Both the active period and requested change survive a copied save/slot.
+    state = Enabled();
+    state.ownsKakarikoCottage = 1;
+    state.currentPeriodPolicy = 1;
+    state.rentalFrames = kFramesPerRentPeriod - 1;
+    auto secondSlot = state;
+    CHECK(TickRent(secondSlot) == 40);
+    CHECK(state.currentPeriodPolicy == 1 && state.rentalFrames == kFramesPerRentPeriod - 1);
+    CHECK(GetRapport(state, ResidentId::Bram) == 0 && GetRapport(secondSlot, ResidentId::Bram) == -3);
+    CHECK(secondSlot.currentPeriodPolicy == 0);
+}
+
 } // namespace
 
 int main() {
@@ -248,6 +328,7 @@ int main() {
     TestPurchaseAndRent();
     TestReloadAndFileIsolation();
     TestRentSaturation();
+    TestRentTermsAndRapport();
     TestRandomizedConservation();
     if (failures != 0) {
         std::cerr << failures << " checks failed.\n";

@@ -8,7 +8,7 @@ The original adventure, required equipment and story progression remain intact.
 
 The world-life increment adds actual game actors, conversations and transactions:
 
-- Twenty original residents across ten named locations, using compatible Hylian,
+- Twenty-three residents across eleven named locations, using compatible Hylian,
   Kokiri, Goron, Zora and Gerudo models with individual appearances and dialogue.
   Their presence follows time of day, local access and the original story.
 - A persistent bank, rental cottage and sixteen regional business deeds. Buy and
@@ -21,6 +21,10 @@ The world-life increment adds actual game actors, conversations and transactions
   markers; building reconstruction and new interiors remain unfinished.
 - Optional double damage from ordinary enemy/boss collision hits and fewer
   temporary loose hearts, with compatibility checks for existing damage cheats.
+- Ten finite delivery favors, persistent relationships, trusted repair discounts,
+  and cottage rent choices with real consequences for Bram and the bank.
+- A postgame audience with Zelda, Captain Aren and steward Maelin on the ruined
+  castle approach. Their dialogue recognizes the player's recovery work.
 
 See the [worklog](docs/LIVING-HYRULE-WORKLOG.md) for the latest build and installed
 executable verification. Code implementation, successful compilation and gameplay
@@ -38,11 +42,16 @@ shortcut when you are ready. The vanilla installation has its own separate direc
 4. Deposit rupees through the ledger, or speak to Orlen in daytime Kakariko to
    deposit your wallet. Bram can refill your wallet from the bank.
 5. Speak to a participating property manager. Choose **Yes** and press a fresh
-   A to accept the quoted purchase or repair; **Not now** or B cancels.
-6. Save normally to keep money, deeds, repairs and accumulated income progress.
+   A to accept the quoted purchase or repair; **Not now** or B cancels. When a
+   resident has several topics, **Something else** cycles through them.
+6. Accept a favor from its sender and hand it over to its named recipient. The
+   **People and favors** journal keeps the instructions and remembers residents.
+7. Save normally to keep money, deeds, repairs, relationships and current favors.
 
 Tavin sells the **1,200-rupee cottage**, then manages the builders' yard. The
-cottage pays **25 rupees per ten minutes of active play**. Sixteen other deeds
+cottage pays **25 rupees per ten minutes of active play** on fair terms. High
+rent pays 40 but damages Bram's trust; if he falls behind, collection drops to15.
+Rent changes start after the current period. Sixteen other deeds
 have their own prices and income. Adult crises suspend trade and income; freeing
 the region and paying for individual repairs restores business operations.
 Ownership survives the age transition. There is no offline income.
@@ -54,8 +63,8 @@ normal rules. The owner's existing cheats are preserved.
 
 ## Development and remaining scope
 
-Full building restoration, additional interiors, persistent relationships,
-regional stewardship, postgame Zelda/castle life, optional gear and wider encounter
+Full building restoration, additional interiors, deeper relationships,
+regional stewardship, castle ownership, optional gear and wider encounter
 changes remain in development. The [110-scene population plan](docs/LIVING-HYRULE-POPULATION.md)
 distinguishes current deployments, planned people and intentional exclusions.
 

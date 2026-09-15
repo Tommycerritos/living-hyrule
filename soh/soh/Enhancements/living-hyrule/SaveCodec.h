@@ -32,6 +32,24 @@ template <typename T> inline bool ReadUnsigned(const nlohmann::json& value, T& o
     return true;
 }
 
+inline bool ReadRapport(const nlohmann::json& value, int8_t& output) {
+    int64_t parsed;
+    if (value.is_number_unsigned()) {
+        const uint64_t unsignedValue = value.get<uint64_t>();
+        if (unsignedValue > static_cast<uint64_t>(kRapportMaximum))
+            return false;
+        parsed = static_cast<int64_t>(unsignedValue);
+    } else if (value.is_number_integer()) {
+        parsed = value.get<int64_t>();
+    } else {
+        return false;
+    }
+    if (parsed < kRapportMinimum || parsed > kRapportMaximum)
+        return false;
+    output = static_cast<int8_t>(parsed);
+    return true;
+}
+
 } // namespace SaveCodecDetail
 
 inline nlohmann::json EncodeEconomy(const EconomyState& state) {
@@ -40,7 +58,7 @@ inline nlohmann::json EncodeEconomy(const EconomyState& state) {
     }
 
     return {
-        { "schemaVersion", 2 },
+        { "schemaVersion", 3 },
         { "enabled", state.enabled != 0 },
         { "bankRupees", state.bankRupees },
         { "ownsKakarikoCottage", state.ownsKakarikoCottage != 0 },
@@ -50,6 +68,13 @@ inline nlohmann::json EncodeEconomy(const EconomyState& state) {
         { "repairedProperties", state.repairedProperties },
         { "businessFrames", state.businessFrames },
         { "totalBusinessEarned", state.totalBusinessEarned },
+        { "rapport", state.rapport },
+        { "metResidents", state.metResidents },
+        { "completedFavors", state.completedFavors },
+        { "activeFavor", state.activeFavor },
+        { "cottageRentPolicy", state.cottageRentPolicy },
+        { "currentPeriodPolicy", state.currentPeriodPolicy },
+        { "marketRestored", state.marketRestored != 0 },
     };
 }
 
@@ -67,7 +92,7 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
 
         uint64_t schemaVersion = 0;
         if (!SaveCodecDetail::ReadUnsigned(data.at("schemaVersion"), schemaVersion) ||
-            (schemaVersion != 1 && schemaVersion != 2) || !data.at("enabled").is_boolean() ||
+            (schemaVersion != 1 && schemaVersion != 2 && schemaVersion != 3) || !data.at("enabled").is_boolean() ||
             !data.at("ownsKakarikoCottage").is_boolean()) {
             return false;
         }
@@ -82,7 +107,7 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
         }
 
         // Schema one migrates without inventing deeds, earnings or repairs.
-        if (schemaVersion == 2) {
+        if (schemaVersion >= 2) {
             if (!SaveCodecDetail::ReadUnsigned(data.at("ownedProperties"), candidate.ownedProperties) ||
                 !SaveCodecDetail::ReadUnsigned(data.at("repairedProperties"), candidate.repairedProperties) ||
                 !SaveCodecDetail::ReadUnsigned(data.at("totalBusinessEarned"), candidate.totalBusinessEarned))
@@ -92,6 +117,25 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
                 return false;
             for (unsigned int i = 0; i < 16; ++i) {
                 if (!SaveCodecDetail::ReadUnsigned(frames[i], candidate.businessFrames[i]))
+                    return false;
+            }
+        }
+        // Earlier schemas retain every existing asset and start with neutral
+        // relationships, no errands, fair rent and no funded reconstruction.
+        if (schemaVersion >= 3) {
+            if (!SaveCodecDetail::ReadUnsigned(data.at("metResidents"), candidate.metResidents) ||
+                !SaveCodecDetail::ReadUnsigned(data.at("completedFavors"), candidate.completedFavors) ||
+                !SaveCodecDetail::ReadUnsigned(data.at("activeFavor"), candidate.activeFavor) ||
+                !SaveCodecDetail::ReadUnsigned(data.at("cottageRentPolicy"), candidate.cottageRentPolicy) ||
+                !SaveCodecDetail::ReadUnsigned(data.at("currentPeriodPolicy"), candidate.currentPeriodPolicy) ||
+                !data.at("marketRestored").is_boolean())
+                return false;
+            candidate.marketRestored = data.at("marketRestored").get<bool>();
+            const auto& rapport = data.at("rapport");
+            if (!rapport.is_array() || rapport.size() != kSocialResidentCount)
+                return false;
+            for (uint32_t i = 0; i < kSocialResidentCount; ++i) {
+                if (!SaveCodecDetail::ReadRapport(rapport[i], candidate.rapport[i]))
                     return false;
             }
         }

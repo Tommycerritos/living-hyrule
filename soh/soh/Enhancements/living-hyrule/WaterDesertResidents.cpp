@@ -179,7 +179,7 @@ void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
     if (IsWaterDesertResidentActor(actor) && GetWaterDesertResidentId(actor) == id) {
         auto* resident = reinterpret_cast<WaterDesertActor*>(actor);
         text = reply ? std::string(resident->trade.response)
-                     : BuildDialogue(id) + DescribeTradeOffer(resident->trade.offer);
+                     : DescribeResidentDialogue(actor, resident->trade, BuildDialogue(id));
     }
     CustomMessage message(text);
     message.AutoFormat();
@@ -190,9 +190,11 @@ void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
 u16 GetTextId(PlayState* play, Actor* actor) {
     auto* resident = reinterpret_cast<WaterDesertActor*>(actor);
     const u16 text = static_cast<u16>(kQuoteText + actor->params);
-    if (resident->talkState == NPC_TALK_STATE_IDLE && !PlayerHasTalk(play, actor))
+    if (resident->talkState == NPC_TALK_STATE_IDLE && !PlayerHasTalk(play, actor)) {
         PreparePropertyTrade(resident->trade,
                              GetWaterDesertResidentPropertyId(static_cast<WaterDesertResidentId>(actor->params)), text);
+        PrepareResidentDialogue(resident->trade, actor);
+    }
     return text;
 }
 

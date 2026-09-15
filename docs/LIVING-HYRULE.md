@@ -10,9 +10,10 @@ individual stages. No automated gameplay acceptance is claimed.
 
 ### People and direct trade
 
-Twenty new identities use independent custom actor behavior. Three live in
+Twenty-three identities use independent custom actor behavior. Three live in
 Kakariko; nine cover the Market, Hyrule Field, ranch and lake; four use native
-Kokiri/Goron models; four use native Zora/Gerudo models. See the
+Kokiri/Goron models; four use native Zora/Gerudo models; Zelda, Captain Aren and
+Maelin receive postgame visitors on the castle approach. See the
 [population document](LIVING-HYRULE-POPULATION.md) for exact placement and gates.
 Compatible skeletons, heads, idles and material segments are reused locally;
 original quest actors and shared resource data are not modified.
@@ -29,12 +30,35 @@ withdraws enough savings to fill the wallet. The ledger remains available for al
 properties, including the cloth workshop without a manager in this increment.
 
 Each actor freezes its offer and save slot when preparing the conversation.
-Only its own live Yes/No prompt and a fresh A press authorize payment. B, C-up or
-the second choice cancel. The handler consumes a quote before continuing to the
+Only its own live choice prompt and a fresh A press authorize payment. B and C-up
+cancel. Three-choice pages use Yes / Something else / Not now; the middle choice
+cycles a frozen offer list without payment. Simultaneous navigation and A cancels
+because the engine applies navigation during drawing. The handler consumes a quote before continuing to the
 result textbox. The shared action path rechecks ownership, story, location,
 funds, wallet capacity, current save, dialogue ownership and safe gameplay.
 Ordinary talking is supported without clearing Link's state flags. Pending
 item-putaway conversations retain their quote and actor until the textbox opens.
+
+### Relationships and favors
+
+Twenty-three permanent save identities track meetings and signed trust (-100 to100).
+Meetings add no points. Ten once-per-save deliveries connect the original twenty
+residents; only one can be carried at a time. Acceptance requires both people to
+be reachable in the current age/story. Delivery requires the recipient's owned
+conversation. The journal can cancel a delivery without a reward; it cannot
+accept or finish one remotely. Successful delivery adds10 trust with both people.
+
+A manager trusted at10 or above quotes repairs at90% of the normal price. The
+engine checks the current price against the frozen quote before charging. A first
+paid repair earns5 trust; repeat repairs are rejected. Fair cottage rent pays25
+and restores1 trust up to20 on a credited period. High rent pays40, costs3 trust,
+and falls to15 when Bram is at-10 or below. Requested terms and current-period
+terms are distinct, preventing a last-moment switch from changing a due payment.
+
+The royal audience appears only after the saved Ganon-defeat timestamp: all three
+by day, Aren overnight. Independent actors reuse compatible native skeletons and
+rendering helpers, never the original Zelda escape, guard or quest state machines.
+They stand on verified dry ground below the ruined castle, not in a rebuilt interior.
 
 ### Banking, property and recovery
 
@@ -96,14 +120,17 @@ without saving discards later changes under the game's usual rules.
 
 LivingHyruleSaveData, inline at SaveContext.ship.livingHyrule, is a fixed-size
 plain C structure. It holds the enable flag, bank, cottage, rent ticks/earnings,
-property/repair masks, sixteen business timers and business earnings. It has no
+property/repair masks, sixteen business timers and business earnings, plus23
+signed trust values, meeting/favor masks, one active delivery, locked/requested
+rent terms and Market restoration funding. It has no
 pointers or dynamic containers and is safe for the engine's copied save snapshot.
 The background save callback reads that snapshot, capturing wallet and ledger
 from the same moment. Global preferences are separate from per-save money.
 
 The optional named section is livingHyrule, outer version **1**. Its
-data.economy payload uses inner **schemaVersion 2**. Schema one migrates by
-preserving every old balance/ownership/timer and initializing new fields to zero.
+data.economy payload uses inner **schemaVersion 3**. Schemas one and two migrate by
+preserving every old balance/ownership/timer and initializing new fields to zero
+and fair rent. The outer section remains version1.
 New saves without the section start with an empty, disabled economy.
 
 The codec validates booleans, integer types/ranges, balances, ownership masks,
@@ -113,8 +140,8 @@ fallback and snapshot save condition preserve the original section when the
 rest of the game saves. Unrelated sections retain upstream behavior; file-wide
 JSON corruption still belongs to upstream recovery.
 
-Resident identities, dialogue state, scenery and heart-drop tracking are transient
-actor/runtime state. This world-life stage does not change the persistent POD.
+Dynamic actor IDs, frozen dialogue state, scenery and heart-drop tracking remain
+transient. Permanent social IDs are explicitly mapped from validated actor families.
 
 ## Build and verification
 

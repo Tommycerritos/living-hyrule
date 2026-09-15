@@ -14,6 +14,13 @@ typedef struct {
     uint32_t repairedProperties;
     uint32_t businessFrames[16];
     uint64_t totalBusinessEarned;
+    int8_t rapport[23];
+    uint32_t metResidents;
+    uint16_t completedFavors;
+    uint8_t activeFavor;         /* 0: none; 1..10: permanent favor identity. */
+    uint8_t cottageRentPolicy;   /* Requested next-period terms: 0 fair, 1 high. */
+    uint8_t currentPeriodPolicy; /* Terms locked for the current rent period. */
+    uint8_t marketRestored;
 } LivingHyruleSaveData;
 
 #endif

@@ -4,6 +4,9 @@
 #include "WorldResidents.h"
 #include "ForestMountainResidents.h"
 #include "WaterDesertResidents.h"
+#include "ResidentSocial.h"
+#include "SocialPolicy.h"
+#include "MarketRestoration.h"
 
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Notification/Notification.h"
@@ -231,6 +234,16 @@ static const char* ExplainResult(Result result) {
             return "Buy this property before commissioning its repairs.";
         case Result::AlreadyRepaired:
             return "This property is already repaired.";
+        case Result::AlreadyCompleted:
+            return "You have already completed that favor. Thank you again.";
+        case Result::FavorInProgress:
+            return "Finish your current delivery, or cancel it in your journal, before accepting another.";
+        case Result::NoActiveFavor:
+            return "You are not carrying a delivery at the moment.";
+        case Result::WrongResident:
+            return "That delivery belongs to someone else. Your journal names the recipient.";
+        case Result::AlreadyRestored:
+            return "The Market square's restoration is already funded. Visit the square again to see the work.";
     }
     return "The transaction could not be completed.";
 }
@@ -269,6 +282,28 @@ static std::string ApplyAction(Action action, uint32_t amount, const Status& sta
                 return "Visit the property's region to complete this transaction.";
             return ExplainResult(action == Action::BuyProperty ? BuyProperty(economy, amount, status.world)
                                                                : RepairProperty(economy, amount, status.world));
+        case Action::SetFairRent:
+        case Action::SetHighRent:
+            if (const auto result = SetCottageRentPolicy(economy, action == Action::SetHighRent);
+                result != Result::Success)
+                return ExplainResult(result);
+            return "New rent terms are recorded for the next period. Save your game to keep this choice.";
+        case Action::AbandonFavor:
+            if (const auto result = AbandonFavor(economy); result != Result::Success)
+                return ExplainResult(result);
+            return "Delivery cancelled. You can speak to its sender to accept it again. No reward was given.";
+        case Action::RestoreMarket: {
+            const auto readiness = GetMarketRestorationReadiness();
+            if (readiness != MarketRestorationReadiness::Ready)
+                return MarketRestorationReadinessText(readiness);
+            if (const auto result = FundMarketRestoration(economy, status.world); result != Result::Success)
+                return ExplainResult(result);
+            return "The Market square's restoration is funded. Leave and return to see the finished streets. "
+                   "Save your game to keep this investment.";
+        }
+        case Action::AcceptFavor:
+        case Action::CompleteFavor:
+            return "Speak directly to the resident to accept or hand over a delivery.";
     }
     return "The transaction could not be completed.";
 }
@@ -278,11 +313,10 @@ std::string PerformAction(Action action, uint32_t amount) {
     return status.canUseLedger ? ApplyAction(action, amount, status) : status.reason;
 }
 
-std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action action, uint32_t amount) {
+std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action action, uint32_t amount,
+                                      uint32_t quotedAmount) {
     if (!GameInteractor::IsSaveLoaded(false) || !IsSupportedAdventure() || actor == nullptr ||
-        actor->update == nullptr ||
-        (!IsResidentActor(actor) && !IsWorldResidentActor(actor) && !IsForestMountainResidentActor(actor) &&
-         !IsWaterDesertResidentActor(actor))) {
+        actor->update == nullptr || !IsValidResident(GetSocialResidentId(actor))) {
         return "Please speak directly to a Living Hyrule trader.";
     }
     Player* player = GET_PLAYER(gPlayState);
@@ -290,7 +324,9 @@ std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action
         !(player->stateFlags1 & PLAYER_STATE1_TALKING) || gPlayState->msgCtx.textId != quoteTextId ||
         Message_GetState(&gPlayState->msgCtx) != TEXT_STATE_CHOICE || gPlayState->msgCtx.choiceIndex != 0 ||
         !(gPlayState->state.input[0].press.button & BTN_A) || (gPlayState->state.input[0].cur.button & BTN_B) ||
-        (gPlayState->state.input[0].press.button & BTN_CUP)) {
+        (gPlayState->state.input[0].press.button & BTN_CUP) ||
+        std::abs(static_cast<int>(gPlayState->state.input[0].rel.stick_y)) >= 30 ||
+        (gPlayState->state.input[0].press.button & (BTN_DUP | BTN_DDOWN))) {
         return "The offer has expired. Speak to the trader again.";
     }
     // Ordinary talking sets IN_CUTSCENE. Allow only that exact owned dialogue;
@@ -309,7 +345,63 @@ std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action
         !SaveManager::Instance->SaveFile_Exist(gSaveContext.fileNum)) {
         return "This account is not available for trading.";
     }
-    return ApplyAction(action, amount, GetStatus());
+    const ResidentId speaker = GetSocialResidentId(actor);
+    auto& economy = gSaveContext.ship.livingHyrule;
+    const auto status = GetStatus();
+    // Actor identity, frozen quote and current conditions all have to agree.
+    // Dialogue text alone never authorizes a transaction with another manager.
+    switch (action) {
+        case Action::AcceptFavor:
+        case Action::CompleteFavor: {
+            if (amount == 0 || amount > kFavorCount)
+                return "That favor is not available.";
+            const auto id = static_cast<uint8_t>(amount);
+            const auto* favor = GetFavor(id);
+            const ResidentId expected = action == Action::AcceptFavor ? favor->issuer : favor->recipient;
+            if (speaker != expected)
+                return ExplainResult(Result::WrongResident);
+            const Result result = action == Action::AcceptFavor ? AcceptFavor(economy, id, status.world)
+                                                                : CompleteFavor(economy, id, speaker, status.world);
+            if (result != Result::Success)
+                return ExplainResult(result);
+            if (action == Action::AcceptFavor)
+                return std::string(favor->instructions) +
+                       " Your journal will keep the details. Save to keep this errand.";
+            return "Thank you for bringing this. You have earned the trust of both of us. Save to keep your progress.";
+        }
+        case Action::BuyCottage:
+            if (speaker != ResidentId::Tavin || quotedAmount != kCottagePrice)
+                return "Please ask Tavin about the cottage deed.";
+            break;
+        case Action::BuyProperty:
+        case Action::RepairProperty:
+            if (amount >= kProperties.size() || PropertyManager(amount) != speaker)
+                return "Please speak to this property's manager.";
+            if (quotedAmount !=
+                (action == Action::BuyProperty ? kProperties[amount].price : EffectiveRepairPrice(economy, amount)))
+                return "The price has changed. Please speak to me again for a fresh quote.";
+            break;
+        case Action::Deposit:
+            if (speaker != ResidentId::Orlen || quotedAmount != amount)
+                return "Please ask Orlen about bank deposits.";
+            break;
+        case Action::Withdraw:
+            if (speaker != ResidentId::Bram || quotedAmount != amount)
+                return "Please ask Bram about bank withdrawals.";
+            break;
+        case Action::SetFairRent:
+        case Action::SetHighRent:
+            if (speaker != ResidentId::Bram || economy.cottageRentPolicy == (action == Action::SetHighRent ? 1 : 0))
+                return "The rent terms have changed. Speak to Bram again before choosing new terms.";
+            break;
+        case Action::RestoreMarket:
+            if (speaker != ResidentId::Hadrin || quotedAmount != kMarketRestorationPrice)
+                return "Please speak to Hadrin in the Market about this work.";
+            break;
+        default:
+            return "This choice is available through your journal.";
+    }
+    return ApplyAction(action, amount, status);
 }
 
 static void UpdateRent() {

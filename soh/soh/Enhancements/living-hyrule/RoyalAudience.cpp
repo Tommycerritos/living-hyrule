@@ -1,5 +1,6 @@
 #include "RoyalAudience.h"
 #include "LivingHyrule.h"
+#include "ResidentSocial.h"
 
 #include "soh/ActorDB.h"
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
@@ -23,17 +24,18 @@ extern "C" {
 #include "objects/object_sd/object_sd.h"
 #include "objects/object_cne/object_cne.h"
 #include "objects/object_os_anime/object_os_anime.h"
-extern PlayState *gPlayState;
+extern PlayState* gPlayState;
 }
 
 namespace LivingHyrule {
 namespace {
 constexpr uint16_t kFirstText = 0x9900;
 // 0x9910..0x9912 and 0x9920..0x9922 are reserved for later offers and replies.
-// This increment is conversation-only; it does not imply rapport or a castle deed.
+// The audience shares resident greetings and recorded recovery relationships.
+// It does not sell a castle deed or run Zelda's original escape behavior.
 constexpr int kResidentCount = static_cast<int>(RoyalResidentId::Count);
 constexpr float kRadians = 3.14159265358979323846f / 32768.0f;
-std::array<int, kResidentCount> actorIds = {-1, -1, -1};
+std::array<int, kResidentCount> actorIds = { -1, -1, -1 };
 uint8_t spawnCooldown = 20;
 
 // Arena allocated and zeroed by Actor_Spawn. Zelda uses 15 entries, Aren 17,
@@ -53,11 +55,11 @@ struct RoyalActor {
 static_assert(std::is_trivial_v<RoyalActor>);
 static_assert(std::is_standard_layout_v<RoyalActor>);
 
-bool ValidIdentity(const Actor *actor) {
+bool ValidIdentity(const Actor* actor) {
     return actor != nullptr && actor->params >= 0 && actor->params < kResidentCount;
 }
 
-uint8_t DesiredResidents(const PlayState *play) {
+uint8_t DesiredResidents(const PlayState* play) {
     RoyalAudienceContext context;
     context.enabled = CVarGetInteger(CVAR_ENHANCEMENT("LivingHyruleResidents"), 0) != 0;
     context.supportedAdventure = IS_VANILLA || IS_MASTER_QUEST;
@@ -71,13 +73,13 @@ uint8_t DesiredResidents(const PlayState *play) {
     return RoyalResidentMaskFor(context);
 }
 
-bool PlayerHasTalk(PlayState *play, const Actor *actor) {
+bool PlayerHasTalk(PlayState* play, const Actor* actor) {
     return GET_PLAYER(play) != nullptr && GET_PLAYER(play)->talkActor == actor &&
            (GET_PLAYER(play)->stateFlags1 & PLAYER_STATE1_TALKING) != 0;
 }
 
 std::string RecoveryDialogue(RoyalResidentId id) {
-    const auto &economy = gSaveContext.ship.livingHyrule;
+    const auto& economy = gSaveContext.ship.livingHyrule;
     const auto world = GetWorldProgress();
     if (!IsValidState(economy))
         return "";
@@ -90,6 +92,9 @@ std::string RecoveryDialogue(RoyalResidentId id) {
     const unsigned int marketWorking =
         (PropertyOperating(economy, 0, world) ? 1u : 0u) + (PropertyOperating(economy, 1, world) ? 1u : 0u);
     if (id == RoyalResidentId::Zelda) {
+        if (economy.marketRestored)
+            return "^The Market's restoration is funded. There are still homes and livelihoods to mend, but "
+                   "you have given the returning families a beginning. The castle remains a separate task.";
         if (marketWorking == 2)
             return "^Vessa's stall and Hadrin's guesthouse are working again through your investment. Those small "
                    "beginnings matter. The castle itself still lies in ruin.";
@@ -123,47 +128,49 @@ std::string RecoveryDialogue(RoyalResidentId id) {
 std::string BuildDialogue(RoyalResidentId id) {
     std::string text = "%g" + std::string(GetRoyalResidentName(id)) + "%w. ";
     switch (id) {
-    case RoyalResidentId::Zelda:
-        text += "It is good to see you again. Defeating Ganon gave Hyrule a future; now we must care for the "
-                "people who will live in it.";
-        text += "^I meet visitors here by day while the royal household works from the castle approach. "
-                "Please tell me what you have seen on your travels.";
-        break;
-    case RoyalResidentId::Aren:
-        text += IS_DAY ? "Captain of the relief watch. Zelda is receiving visitors here today. Keep the "
-                         "road clear for the families bringing their petitions."
-                       : "The household has finished its day's work. Zelda and Maelin will return to this "
-                         "spot by daylight. I will keep watch until then.";
-        break;
-    case RoyalResidentId::Maelin:
-        text += "Steward of the royal household. I keep two lists: what we have, and what people still need. "
-                "The second is longer, but every working livelihood helps.";
-        break;
-    default:
-        return "Safe travels.";
+        case RoyalResidentId::Zelda:
+            text += "It is good to see you again. Defeating Ganon gave Hyrule a future; now we must care for the "
+                    "people who will live in it.";
+            text += "^I meet visitors here by day while the royal household works from the castle approach. "
+                    "Please tell me what you have seen on your travels.";
+            break;
+        case RoyalResidentId::Aren:
+            text += IS_DAY ? "Captain of the relief watch. Zelda is receiving visitors here today. Keep the "
+                             "road clear for the families bringing their petitions."
+                           : "The household has finished its day's work. Zelda and Maelin will return to this "
+                             "spot by daylight. I will keep watch until then.";
+            break;
+        case RoyalResidentId::Maelin:
+            text += "Steward of the royal household. I keep two lists: what we have, and what people still need. "
+                    "The second is longer, but every working livelihood helps.";
+            break;
+        default:
+            return "Safe travels.";
     }
     return text + RecoveryDialogue(id);
 }
 
-void LoadText(uint16_t *textId, bool *loadFromMessageTable) {
+void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
     if (*textId < kFirstText || *textId >= kFirstText + kResidentCount)
         return;
     const auto id = static_cast<RoyalResidentId>(*textId - kFirstText);
     // Player owns the speaker before OnOpenText; msgCtx may still reference an
     // earlier conversation. Validate the actor family and identity before text.
-    Actor *speaker =
+    Actor* speaker =
         gPlayState != nullptr && GET_PLAYER(gPlayState) != nullptr ? GET_PLAYER(gPlayState)->talkActor : nullptr;
     CustomMessage message(IsRoyalResidentActor(speaker) && GetRoyalResidentId(speaker) == id
-                              ? BuildDialogue(id)
+                              ? BuildDialogue(id) + ResidentGreeting(speaker)
                               : "Let's speak again in a moment.");
     message.AutoFormat();
     message.LoadIntoFont();
     *loadFromMessageTable = false;
 }
 
-u16 GetTextId(PlayState *, Actor *actor) { return static_cast<u16>(kFirstText + actor->params); }
+u16 GetTextId(PlayState*, Actor* actor) {
+    return static_cast<u16>(kFirstText + actor->params);
+}
 
-s16 UpdateTalkState(PlayState *play, Actor *actor) {
+s16 UpdateTalkState(PlayState* play, Actor* actor) {
     // Preserve the accepted request while Link puts away an item. There may
     // still be no textbox, or msgCtx may belong to the previous speaker.
     if (PlayerHasTalk(play, actor))
@@ -175,14 +182,14 @@ s16 UpdateTalkState(PlayState *play, Actor *actor) {
 }
 
 ColliderCylinderInit cylinderInit = {
-    {COLTYPE_NONE, AT_NONE, AC_NONE, OC1_ON | OC1_TYPE_ALL, OC2_TYPE_2, COLSHAPE_CYLINDER},
-    {ELEMTYPE_UNK0, {0, 0, 0}, {0, 0, 0}, TOUCH_NONE, BUMP_NONE, OCELEM_ON},
-    {20, 70, 0, {0, 0, 0}},
+    { COLTYPE_NONE, AT_NONE, AC_NONE, OC1_ON | OC1_TYPE_ALL, OC2_TYPE_2, COLSHAPE_CYLINDER },
+    { ELEMTYPE_UNK0, { 0, 0, 0 }, { 0, 0, 0 }, TOUCH_NONE, BUMP_NONE, OCELEM_ON },
+    { 20, 70, 0, { 0, 0, 0 } },
 };
-CollisionCheckInfoInit2 collisionInfo = {0, 0, 0, 0, MASS_IMMOVABLE};
+CollisionCheckInfoInit2 collisionInfo = { 0, 0, 0, 0, MASS_IMMOVABLE };
 
-void InitRoyalResident(Actor *actor, PlayState *play) {
-    auto *resident = reinterpret_cast<RoyalActor *>(actor);
+void InitRoyalResident(Actor* actor, PlayState* play) {
+    auto* resident = reinterpret_cast<RoyalActor*>(actor);
     const auto id = static_cast<RoyalResidentId>(actor->params);
     if (!ValidIdentity(actor) || (DesiredResidents(play) & RoyalResidentBit(id)) == 0) {
         Actor_Kill(actor);
@@ -193,16 +200,16 @@ void InitRoyalResident(Actor *actor, PlayState *play) {
     // Native asset references resolve directly through the resource bridge.
     // None of the original Zelda escape, ending, or guard state machines run.
     if (id == RoyalResidentId::Zelda) {
-        SkelAnime_InitFlex(play, &resident->skelAnime, (FlexSkeletonHeader *)gZelda2Skel,
-                           (AnimationHeader *)gZelda2Anime2Anim_009FBC, resident->joints, resident->morphs, 15);
+        SkelAnime_InitFlex(play, &resident->skelAnime, (FlexSkeletonHeader*)gZelda2Skel,
+                           (AnimationHeader*)gZelda2Anime2Anim_009FBC, resident->joints, resident->morphs, 15);
         resident->skelAnime.playSpeed = 0.8f;
     } else if (id == RoyalResidentId::Aren) {
-        SkelAnime_Init(play, &resident->skelAnime, (SkeletonHeader *)gEnHeishiSkel,
-                       (AnimationHeader *)gEnHeishiIdleAnim, resident->joints, resident->morphs, 17);
+        SkelAnime_Init(play, &resident->skelAnime, (SkeletonHeader*)gEnHeishiSkel, (AnimationHeader*)gEnHeishiIdleAnim,
+                       resident->joints, resident->morphs, 17);
         resident->skelAnime.curFrame = resident->skelAnime.endFrame * 0.3f;
     } else {
-        SkelAnime_InitFlex(play, &resident->skelAnime, (FlexSkeletonHeader *)gCneSkel,
-                           (AnimationHeader *)gObjOsAnim_4E90, resident->joints, resident->morphs, 16);
+        SkelAnime_InitFlex(play, &resident->skelAnime, (FlexSkeletonHeader*)gCneSkel, (AnimationHeader*)gObjOsAnim_4E90,
+                           resident->joints, resident->morphs, 16);
         resident->skelAnime.playSpeed = 0.65f;
         resident->skelAnime.curFrame = resident->skelAnime.endFrame * 0.6f;
     }
@@ -219,8 +226,8 @@ void InitRoyalResident(Actor *actor, PlayState *play) {
     Actor_SetFocus(actor, 60.0f);
 }
 
-void DestroyRoyalResident(Actor *actor, PlayState *play) {
-    auto *resident = reinterpret_cast<RoyalActor *>(actor);
+void DestroyRoyalResident(Actor* actor, PlayState* play) {
+    auto* resident = reinterpret_cast<RoyalActor*>(actor);
     if (!resident->initialized)
         return;
     ResourceMgr_UnregisterSkeleton(&resident->skelAnime);
@@ -228,8 +235,8 @@ void DestroyRoyalResident(Actor *actor, PlayState *play) {
     resident->initialized = false;
 }
 
-void UpdateRoyalResident(Actor *actor, PlayState *play) {
-    auto *resident = reinterpret_cast<RoyalActor *>(actor);
+void UpdateRoyalResident(Actor* actor, PlayState* play) {
+    auto* resident = reinterpret_cast<RoyalActor*>(actor);
     if (!resident->initialized || play != gPlayState)
         return;
     const bool present = ValidIdentity(actor) &&
@@ -264,9 +271,9 @@ void UpdateRoyalResident(Actor *actor, PlayState *play) {
 // The adult Zelda head draws seven articulated hair pieces using segment 0xC.
 // Adapt only the native static-hair geometry from En_Zl3::func_80B5944C. Its
 // cutscene physics and state are neither required nor copied into our actor.
-extern "C" s32 OverrideRoyalZeldaLimb(PlayState *play, s32 limb, Gfx **, Vec3f *pos, Vec3s *rot, void *actorRef,
-                                      Gfx **gfx) {
-    auto *resident = static_cast<RoyalActor *>(actorRef);
+extern "C" s32 OverrideRoyalZeldaLimb(PlayState* play, s32 limb, Gfx**, Vec3f* pos, Vec3s* rot, void* actorRef,
+                                      Gfx** gfx) {
+    auto* resident = static_cast<RoyalActor*>(actorRef);
     if (limb == 7) {
         rot->x += resident->interact.torsoRot.y;
         rot->z += resident->interact.torsoRot.x;
@@ -275,7 +282,7 @@ extern "C" s32 OverrideRoyalZeldaLimb(PlayState *play, s32 limb, Gfx **, Vec3f *
         return false;
     // Matrix_ToMtx's debug filename parameter predates const-correctness.
     static char sourceFile[] = __FILE__;
-    auto *matrices = static_cast<Mtx *>(Graph_Alloc(play->state.gfxCtx, 7 * sizeof(Mtx)));
+    auto* matrices = static_cast<Mtx*>(Graph_Alloc(play->state.gfxCtx, 7 * sizeof(Mtx)));
     gSPSegment((*gfx)++, 0x0C, reinterpret_cast<uintptr_t>(matrices));
     rot->x += resident->interact.headRot.y;
     rot->z += resident->interact.headRot.x;
@@ -306,16 +313,16 @@ extern "C" s32 OverrideRoyalZeldaLimb(PlayState *play, s32 limb, Gfx **, Vec3f *
     return false;
 }
 
-extern "C" void PostRoyalZeldaLimb(PlayState *, s32 limb, Gfx **, Vec3s *, void *actorRef, Gfx **) {
+extern "C" void PostRoyalZeldaLimb(PlayState*, s32 limb, Gfx**, Vec3s*, void* actorRef, Gfx**) {
     if (limb != 14)
         return;
-    auto *resident = static_cast<RoyalActor *>(actorRef);
-    Vec3f focus = {0, 10, 0};
+    auto* resident = static_cast<RoyalActor*>(actorRef);
+    Vec3f focus = { 0, 10, 0 };
     Matrix_MultVec3f(&focus, &resident->actor.focus.pos);
 }
 
-s32 OverrideRoyalStaffLimb(PlayState *, s32 limb, Gfx **list, Vec3f *, Vec3s *rot, void *actorRef) {
-    auto *resident = static_cast<RoyalActor *>(actorRef);
+s32 OverrideRoyalStaffLimb(PlayState*, s32 limb, Gfx** list, Vec3f*, Vec3s* rot, void* actorRef) {
+    auto* resident = static_cast<RoyalActor*>(actorRef);
     if (resident->actor.params == static_cast<s16>(RoyalResidentId::Aren)) {
         if (limb == 9)
             rot->x += resident->interact.torsoRot.y;
@@ -324,7 +331,7 @@ s32 OverrideRoyalStaffLimb(PlayState *, s32 limb, Gfx **list, Vec3f *, Vec3s *ro
             rot->z += resident->interact.headRot.x;
         }
     } else if (limb == 15) {
-        *list = reinterpret_cast<Gfx *>(const_cast<char *>(gCneHeadBrownHairDL));
+        *list = reinterpret_cast<Gfx*>(const_cast<char*>(gCneHeadBrownHairDL));
         Matrix_Translate(1400.0f, 0.0f, 0.0f, MTXMODE_APPLY);
         Matrix_RotateX(resident->interact.headRot.y * kRadians, MTXMODE_APPLY);
         Matrix_RotateZ(resident->interact.headRot.x * kRadians, MTXMODE_APPLY);
@@ -336,29 +343,29 @@ s32 OverrideRoyalStaffLimb(PlayState *, s32 limb, Gfx **list, Vec3f *, Vec3s *ro
     return false;
 }
 
-extern "C" void PostRoyalStaffLimb(PlayState *, s32 limb, Gfx **, Vec3s *, void *actorRef) {
-    auto *resident = static_cast<RoyalActor *>(actorRef);
+extern "C" void PostRoyalStaffLimb(PlayState*, s32 limb, Gfx**, Vec3s*, void* actorRef) {
+    auto* resident = static_cast<RoyalActor*>(actorRef);
     if (resident->actor.params != static_cast<s16>(RoyalResidentId::Maelin) || limb != 15)
         return;
-    Vec3f focus = {400, 0, 0};
+    Vec3f focus = { 400, 0, 0 };
     Matrix_MultVec3f(&focus, &resident->actor.focus.pos);
 }
 
-Gfx *StaffMaterial(GraphicsContext *graphics, uint8_t r, uint8_t g, uint8_t b) {
-    auto *list = static_cast<Gfx *>(Graph_Alloc(graphics, 2 * sizeof(Gfx)));
+Gfx* StaffMaterial(GraphicsContext* graphics, uint8_t r, uint8_t g, uint8_t b) {
+    auto* list = static_cast<Gfx*>(Graph_Alloc(graphics, 2 * sizeof(Gfx)));
     gDPSetEnvColor(list, r, g, b, 0);
     gSPEndDisplayList(list + 1);
     return list;
 }
 
-extern "C" void DrawRoyalResident(Actor *actor, PlayState *play) {
-    auto *resident = reinterpret_cast<RoyalActor *>(actor);
+extern "C" void DrawRoyalResident(Actor* actor, PlayState* play) {
+    auto* resident = reinterpret_cast<RoyalActor*>(actor);
     if (!resident->initialized || !ValidIdentity(actor))
         return;
     OPEN_DISPS(play->state.gfxCtx);
     Gfx_SetupDL_25Opa(play->state.gfxCtx);
     if (actor->params == static_cast<s16>(RoyalResidentId::Zelda)) {
-        static const char *eyes[] = {gZelda2EyeOpenTex, gZelda2EyeHalfTex, gZelda2EyeShutTex};
+        static const char* eyes[] = { gZelda2EyeOpenTex, gZelda2EyeHalfTex, gZelda2EyeShutTex };
         gSPSegment(POLY_OPA_DISP++, 0x08, reinterpret_cast<uintptr_t>(eyes[resident->eyeIndex]));
         gSPSegment(POLY_OPA_DISP++, 0x09, reinterpret_cast<uintptr_t>(eyes[resident->eyeIndex]));
         gSPSegment(POLY_OPA_DISP++, 0x0A, reinterpret_cast<uintptr_t>(gZelda2MouthSeriousTex));
@@ -389,36 +396,42 @@ struct Placement {
 };
 // Verified against the local ganon_tou base collision and actor entries. This
 // roadside audience is not a restored castle interior. No scene is replaced.
-constexpr std::array<Placement, kResidentCount> placements = {{
-    {RoyalResidentId::Zelda, {-180, 1241, 1980}, 0},
-    {RoyalResidentId::Aren, {-400, 1233, 2000}, 0},
-    {RoyalResidentId::Maelin, {0, 1250, 2000}, 0},
-}};
+constexpr std::array<Placement, kResidentCount> placements = { {
+    { RoyalResidentId::Zelda, { -180, 1241, 1980 }, 0 },
+    { RoyalResidentId::Aren, { -400, 1233, 2000 }, 0 },
+    { RoyalResidentId::Maelin, { 0, 1250, 2000 }, 0 },
+} };
 
-bool ClearGround(PlayState *play, const Vec3f &candidate, Vec3f &ground) {
-    Vec3f probe = {candidate.x, candidate.y + 40.0f, candidate.z};
-    CollisionPoly *floor = nullptr;
+bool ClearGround(PlayState* play, const Vec3f& candidate, Vec3f& ground) {
+    Vec3f probe = { candidate.x, candidate.y + 40.0f, candidate.z };
+    CollisionPoly* floor = nullptr;
     const float y = BgCheck_EntityRaycastFloor1(&play->colCtx, &floor, &probe);
     if (floor == nullptr || !std::isfinite(y) || y <= BGCHECK_Y_MIN || std::abs(y - candidate.y) > 24.0f ||
         floor->normal.y < 26000)
         return false;
-    ground = {candidate.x, y, candidate.z};
-    constexpr std::array<Vec3f, 8> offsets = {
-        {{44, 0, 0}, {-44, 0, 0}, {0, 0, 44}, {0, 0, -44}, {32, 0, 32}, {-32, 0, 32}, {32, 0, -32}, {-32, 0, -32}}};
-    for (const auto &offset : offsets) {
-        probe = {ground.x + offset.x, y + 24.0f, ground.z + offset.z};
+    ground = { candidate.x, y, candidate.z };
+    constexpr std::array<Vec3f, 8> offsets = { { { 44, 0, 0 },
+                                                 { -44, 0, 0 },
+                                                 { 0, 0, 44 },
+                                                 { 0, 0, -44 },
+                                                 { 32, 0, 32 },
+                                                 { -32, 0, 32 },
+                                                 { 32, 0, -32 },
+                                                 { -32, 0, -32 } } };
+    for (const auto& offset : offsets) {
+        probe = { ground.x + offset.x, y + 24.0f, ground.z + offset.z };
         floor = nullptr;
         const float edge = BgCheck_EntityRaycastFloor1(&play->colCtx, &floor, &probe);
         if (floor == nullptr || !std::isfinite(edge) || std::abs(edge - y) > 8.0f || floor->normal.y < 26000)
             return false;
     }
-    for (const float height : {32.0f, 60.0f, 85.0f}) {
-        probe = {ground.x, y + height, ground.z};
+    for (const float height : { 32.0f, 60.0f, 85.0f }) {
+        probe = { ground.x, y + height, ground.z };
         if (BgCheck_SphVsFirstPoly(&play->colCtx, &probe, 25.0f))
             return false;
     }
     float waterHeight = 0.0f;
-    WaterBox *water = nullptr;
+    WaterBox* water = nullptr;
     if (WaterBox_GetSurface1(play, &play->colCtx, ground.x, ground.z, &waterHeight, &water) && waterHeight > y + 2.0f)
         return false;
     for (int category = 0; category < ACTORCAT_MAX; ++category) {
@@ -426,7 +439,7 @@ bool ClearGround(PlayState *play, const Vec3f &candidate, Vec3f &ground) {
             category != ACTORCAT_BG && category != ACTORCAT_PLAYER && category != ACTORCAT_ENEMY &&
             category != ACTORCAT_BOSS)
             continue;
-        for (Actor *actor = play->actorCtx.actorLists[category].head; actor != nullptr; actor = actor->next) {
+        for (Actor* actor = play->actorCtx.actorLists[category].head; actor != nullptr; actor = actor->next) {
             if (actor->update == nullptr)
                 continue;
             const bool hostile = category == ACTORCAT_ENEMY || category == ACTORCAT_BOSS;
@@ -458,11 +471,11 @@ void UpdatePopulation() {
         Message_GetState(&gPlayState->msgCtx) != TEXT_STATE_NONE)
         return;
     uint8_t present = 0;
-    for (Actor *actor = gPlayState->actorCtx.actorLists[ACTORCAT_NPC].head; actor != nullptr; actor = actor->next) {
+    for (Actor* actor = gPlayState->actorCtx.actorLists[ACTORCAT_NPC].head; actor != nullptr; actor = actor->next) {
         if (actor->update != nullptr && IsRoyalResidentActor(actor))
             present |= RoyalResidentBit(GetRoyalResidentId(actor));
     }
-    for (const auto &placement : placements) {
+    for (const auto& placement : placements) {
         const uint8_t bit = RoyalResidentBit(placement.id);
         if ((desired & bit) == 0 || (present & bit) != 0)
             continue;
@@ -472,7 +485,7 @@ void UpdatePopulation() {
         Vec3f ground{};
         if (!ClearGround(gPlayState, placement.position, ground))
             continue;
-        Actor *actor = Actor_Spawn(&gPlayState->actorCtx, gPlayState, static_cast<s16>(actorId), ground.x, ground.y,
+        Actor* actor = Actor_Spawn(&gPlayState->actorCtx, gPlayState, static_cast<s16>(actorId), ground.x, ground.y,
                                    ground.z, 0, placement.yaw, 0, static_cast<s16>(placement.id));
         if (actor != nullptr && actor->update != nullptr)
             present |= bit;
@@ -483,9 +496,9 @@ void RegisterRoyalAudience() {
     static bool registered = false;
     if (registered || ActorDB::Instance == nullptr || GameInteractor::Instance == nullptr)
         return;
-    static constexpr const char *names[] = {"En_LivingHyruleRoyalZelda", "En_LivingHyruleRoyalGuard",
-                                            "En_LivingHyruleRoyalSteward"};
-    static constexpr s16 objects[] = {OBJECT_ZL2, OBJECT_SD, OBJECT_CNE};
+    static constexpr const char* names[] = { "En_LivingHyruleRoyalZelda", "En_LivingHyruleRoyalGuard",
+                                             "En_LivingHyruleRoyalSteward" };
+    static constexpr s16 objects[] = { OBJECT_ZL2, OBJECT_SD, OBJECT_CNE };
     for (int id = 0; id < kResidentCount; ++id) {
         ActorDBInit entry;
         entry.name = names[id];
@@ -508,19 +521,19 @@ void RegisterRoyalAudience() {
 RegisterShipInitFunc initRoyalAudience(RegisterRoyalAudience);
 } // namespace
 
-bool IsRoyalResidentActor(const Actor *actor) {
+bool IsRoyalResidentActor(const Actor* actor) {
     if (!ValidIdentity(actor))
         return false;
     const int expectedId = actorIds[static_cast<size_t>(actor->params)];
     return expectedId >= 0 && actor->id == expectedId;
 }
 
-RoyalResidentId GetRoyalResidentId(const Actor *actor) {
+RoyalResidentId GetRoyalResidentId(const Actor* actor) {
     return IsRoyalResidentActor(actor) ? static_cast<RoyalResidentId>(actor->params) : RoyalResidentId::Count;
 }
 
-const char *GetRoyalResidentName(RoyalResidentId id) {
-    static constexpr const char *names[] = {"Zelda", "Captain Aren", "Maelin"};
+const char* GetRoyalResidentName(RoyalResidentId id) {
+    static constexpr const char* names[] = { "Zelda", "Captain Aren", "Maelin" };
     return id < RoyalResidentId::Count ? names[static_cast<size_t>(id)] : "Royal resident";
 }
 

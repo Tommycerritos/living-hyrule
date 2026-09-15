@@ -1,5 +1,25 @@
 # Living Hyrule changelog
 
+## 2026-09-15 - Relationships and royal audience (source integrated; build pending)
+
+- Added permanent identities and trust for23 residents, ten finite delivery
+  favors, an active-favor journal and actor-owned acceptance/handover.
+- Added real fair/high cottage rent, locked current-period terms, trust changes
+  and arrears; trusted managers quote and charge10% less for repairs.
+- Added frozen conversation topic cycling with native three-choice prompts,
+  fresh confirmation, speaker checks and protection against simultaneous movement
+  and confirmation input.
+- Added independent postgame Zelda, Captain Aren and Maelin actors on the ruined
+  castle approach, with recovery dialogue and shared recorded meetings.
+- Migrated save schemas1/2 to3 while preserving balances, properties, repairs and
+  timers. Added strict social validation and retained unreadable-section protection.
+- Twelve native suites passed. The integrated actor/dialogue/UI translation units
+  passed native engine-header syntax checks. Full linked build and staging remain
+  pending Market restoration integration; the installed checkpoint is still002be29.
+
+No game was started. Walking routines, Market geometry and the next wardrobe /
+stewardship increment are being developed separately, not claimed as installed here.
+
 ## 2026-09-15 - World life, direct trade and combat challenge
 
 - Added seventeen residents beyond the original three, across the Market,

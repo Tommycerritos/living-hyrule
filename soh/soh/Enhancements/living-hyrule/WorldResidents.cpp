@@ -1,6 +1,7 @@
 #include "WorldResidents.h"
 #include "LivingHyrule.h"
 #include "TradeDialogue.h"
+#include "MarketRestoration.h"
 
 #include "soh/ActorDB.h"
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
@@ -236,6 +237,7 @@ std::string BusinessDialogue(WorldResidentId id, const WorldProgress& world) {
 
 std::string BuildDialogue(WorldResidentId id) {
     const WorldProgress world = GetWorldProgress();
+    const bool restoredSquare = IsMarketRestorationActive();
     std::string text = "%g" + std::string(GetWorldResidentName(id)) + "%w. ";
     switch (id) {
         case WorldResidentId::Vessa:
@@ -244,24 +246,30 @@ std::string BuildDialogue(WorldResidentId id) {
                         "never into a customer's basket.";
             } else if (IsValidState(gSaveContext.ship.livingHyrule) &&
                        PropertyOperating(gSaveContext.ship.livingHyrule, 0, world)) {
-                text += "The stall is working, though the town around it is still scarred. A basket of fresh food "
-                        "gives people a reason to return.";
+                text += restoredSquare ? "The streets are sound again, and this stall is working. A basket of "
+                                         "fresh food gives people a reason to come back tomorrow."
+                                       : "The stall is working, though the town around it is still scarred. A "
+                                         "basket of fresh food gives people a reason to return.";
             } else {
                 text += "I used to sell fresh produce here. For now I help the returning families. With an investment "
                         "and sound equipment, the stall could feed this square again.";
             }
             break;
         case WorldResidentId::Hadrin:
-            text += world.adult ? "I used to carry guests' trunks. Now I carry supplies for the people coming home. "
-                                  "The town is safe, but these ruins need more than courage."
-                                : "Guesthouse porter. I can tell a traveler's journey by the mud on their luggage. "
-                                  "Yours would make quite a story.";
+            text += restoredSquare ? "A square fit to walk through again. I still sort supplies by the old "
+                                     "guesthouse; the rooms and alleys will need their own work."
+                    : world.adult  ? "I used to carry guests' trunks. Now I carry supplies for the people coming home. "
+                                     "The town is safe, but these ruins need more than courage."
+                                   : "Guesthouse porter. I can tell a traveler's journey by the mud on their luggage. "
+                                     "Yours would make quite a story.";
             break;
         case WorldResidentId::Pella:
-            text += world.adult ? "I keep the relief workers' lamps trimmed. A little light belongs in this ruined "
-                                  "square, even before the houses are ready."
-                                : "The lantern keeper. The sellers count coins at sunset; I count wicks. Someone has "
-                                  "to make sure the last traveler can find the way.";
+            text += restoredSquare ? "The square has its shape back. I make my rounds for the people returning "
+                                     "after sunset. We will light the town one evening at a time."
+                    : world.adult  ? "I keep the relief workers' lamps trimmed. A little light belongs in this ruined "
+                                     "square, even before the houses are ready."
+                                  : "The lantern keeper. The sellers count coins at sunset; I count wicks. Someone has "
+                                    "to make sure the last traveler can find the way.";
             break;
         case WorldResidentId::Caro:
             text += world.adult ? "Road courier. Since the forest quieted, letters have started moving again. I still "
@@ -328,7 +336,7 @@ void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
     std::string text = "Let's speak again in a moment.";
     if (resident != nullptr) {
         text = reply ? std::string(resident->trade.response)
-                     : BuildDialogue(id) + DescribeTradeOffer(resident->trade.offer);
+                     : DescribeResidentDialogue(&resident->actor, resident->trade, BuildDialogue(id));
     }
     CustomMessage message(text);
     message.AutoFormat();
@@ -344,6 +352,7 @@ u16 GetTextId(PlayState* play, Actor* actor) {
     if (resident->talkState == NPC_TALK_STATE_IDLE && !talkReserved) {
         PreparePropertyTrade(resident->trade, GetWorldResidentPropertyId(static_cast<WorldResidentId>(actor->params)),
                              textId);
+        PrepareResidentDialogue(resident->trade, actor);
     }
     return textId;
 }

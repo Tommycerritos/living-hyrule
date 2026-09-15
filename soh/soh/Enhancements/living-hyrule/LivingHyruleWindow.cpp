@@ -1,5 +1,7 @@
 #include "LivingHyrule.h"
 #include "ChallengeMode.h"
+#include "SocialPolicy.h"
+#include "MarketRestoration.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -35,6 +37,8 @@ class LivingHyruleWindow final : public Ship::GuiWindow {
     void DrawBank(Status& status);
     void DrawCottage(Status& status);
     void DrawProperties(Status& status);
+    void DrawJournal(Status& status);
+    void DrawRestoration(Status& status);
 
     int mAmount = 10;
     int mLastFileNum = -2;
@@ -129,10 +133,18 @@ void LivingHyruleWindow::DrawCottage(Status& status) {
             ImGui::Text("Rent resumes with %u:%02u remaining.", remainingSeconds / 60, remainingSeconds % 60);
         }
         ImGui::Text("Total rent earned: %llu rupees", static_cast<unsigned long long>(status.economy.totalRentEarned));
+        ImGui::Text("Current period: %s | Expected collection: %u rupees",
+                    status.economy.currentPeriodPolicy ? "high rent" : "fair rent",
+                    EffectiveCottageRent(status.economy));
+        ImGui::Text("Next period: %s", status.economy.cottageRentPolicy ? "high rent (40)" : "fair rent (25)");
+        ImGui::TextWrapped("Fair rent slowly builds Bram's trust. High rent costs trust each time it is collected; "
+                           "at -10 trust or below Bram can pay only 15. A change applies after the current period.");
+        DrawActionButton(status.economy.cottageRentPolicy ? "Choose fair rent" : "Choose high rent",
+                         status.economy.cottageRentPolicy ? Action::SetFairRent : Action::SetHighRent, 0,
+                         !status.economy.enabled, status);
     }
 
-    ImGui::TextWrapped("Rent: %u rupees into your bank every ten minutes of active play. No offline payout.",
-                       static_cast<unsigned int>(kRentPerPeriod));
+    ImGui::TextWrapped("Rent goes into your bank every ten minutes of active play. No offline payout.");
 }
 
 void LivingHyruleWindow::DrawProperties(Status& status) {
@@ -173,10 +185,12 @@ void LivingHyruleWindow::DrawProperties(Status& status) {
                     "Buy deed", Action::BuyProperty, id,
                     !status.economy.enabled || !open || !local || status.economy.bankRupees < property.price, status);
             } else if (status.world.adult && !(status.economy.repairedProperties & (1u << id))) {
-                ImGui::Text("Owned; repairs required: %u rupees", property.repairCost);
+                const uint32_t repairPrice = EffectiveRepairPrice(status.economy, id);
+                ImGui::Text("Owned; repairs required: %u rupees", repairPrice);
+                if (repairPrice < property.repairCost)
+                    ImGui::TextUnformatted("Trusted customer: 10% repair discount");
                 DrawActionButton("Commission repairs", Action::RepairProperty, id,
-                                 !status.economy.enabled || !open || !local ||
-                                     status.economy.bankRupees < property.repairCost,
+                                 !status.economy.enabled || !open || !local || status.economy.bankRupees < repairPrice,
                                  status);
             } else {
                 ImGui::TextUnformatted("Deed owned");
@@ -193,6 +207,66 @@ void LivingHyruleWindow::DrawProperties(Status& status) {
             ImGui::PopID();
         }
     }
+}
+
+void LivingHyruleWindow::DrawJournal(Status& status) {
+    ImGui::Separator();
+    if (!ImGui::CollapsingHeader("People and favors", ImGuiTreeNodeFlags_DefaultOpen))
+        return;
+    ImGui::TextWrapped("Speak to residents to accept and deliver favors. Choose Something else during a "
+                       "conversation to move between business and personal requests. Greetings do not earn trust.");
+    unsigned int completed = 0;
+    for (uint8_t id = 1; id <= kFavorCount; ++id)
+        completed += FavorCompleted(status.economy, id) ? 1u : 0u;
+    ImGui::Text("Favors completed: %u / %u", completed, static_cast<unsigned int>(kFavorCount));
+    if (const auto* favor = GetFavor(status.economy.activeFavor); favor != nullptr) {
+        ImGui::Text("Current favor: %s", favor->name);
+        ImGui::TextWrapped("%s", favor->instructions);
+        ImGui::TextWrapped("Deliveries are recorded in this journal. They do not replace an adventure item.");
+        DrawActionButton("Cancel this delivery", Action::AbandonFavor, 0, !status.economy.enabled, status);
+    } else {
+        ImGui::TextUnformatted("No delivery in progress.");
+    }
+    ImGui::TextWrapped("Each completed favor earns 10 trust with its sender and recipient, once. A manager who "
+                       "trusts you gives a 10%% repair discount. A first paid repair earns 5 trust.");
+    unsigned int met = 0;
+    for (uint32_t index = 0; index < kSocialResidentCount; ++index) {
+        const auto id = static_cast<ResidentId>(index);
+        if (!HasMetResident(status.economy, id))
+            continue;
+        ++met;
+        const int rapport = GetRapport(status.economy, id);
+        ImGui::BulletText("%s: %s (%+d)", GetSocialResidentName(id),
+                          rapport >= kTrustedRapport ? "trusted"
+                          : rapport < 0              ? "strained"
+                                                     : "acquainted",
+                          rapport);
+    }
+    if (met == 0)
+        ImGui::TextWrapped("Your journal will remember the Living Hyrule residents you speak with.");
+}
+
+void LivingHyruleWindow::DrawRestoration(Status& status) {
+    ImGui::Separator();
+    if (!ImGui::CollapsingHeader("Rebuilding Castle Town"))
+        return;
+    ImGui::TextWrapped("After Ganon's defeat, Hadrin can commission the Market square's streets and facades. "
+                       "The work appears when you leave and return. Shop interiors and alleys remain closed.");
+    if (status.economy.marketRestored) {
+        ImGui::TextUnformatted("Market restoration funded.");
+        ImGui::TextWrapped("Visit the Market again to see the work. The castle is a separate project.");
+    } else {
+        ImGui::Text("Investment: %u bank rupees", kMarketRestorationPrice);
+        const auto readiness = GetMarketRestorationReadiness();
+        if (readiness != MarketRestorationReadiness::Ready)
+            ImGui::TextWrapped("%s", MarketRestorationReadinessText(readiness));
+        DrawActionButton("Fund Market restoration", Action::RestoreMarket, 0,
+                         readiness != MarketRestorationReadiness::Ready ||
+                             status.economy.bankRupees < kMarketRestorationPrice,
+                         status);
+    }
+    ImGui::TextWrapped("Zelda receives visitors on the castle approach by day after your victory. Captain Aren "
+                       "keeps watch overnight, and Maelin records the kingdom's working livelihoods.");
 }
 
 void LivingHyruleWindow::DrawElement() {
@@ -212,7 +286,8 @@ void LivingHyruleWindow::DrawElement() {
     ImGui::TextWrapped(
         "Meet residents in Kakariko, Castle Town, Hyrule Field, Lon Lon Ranch, Kokiri Forest, Goron City, "
         "Zora's River, Lake Hylia, Gerudo Valley and Gerudo's Fortress. "
-        "Work shifts and returning traders follow the region's story and business recovery.");
+        "Work shifts and returning traders follow the region's story and business recovery. "
+        "After Ganon's defeat, Zelda and the royal household receive visitors on the castle approach.");
     DrawChallengeControls();
     ImGui::Separator();
     if (!status.loaded) {
@@ -237,10 +312,12 @@ void LivingHyruleWindow::DrawElement() {
 
     DrawBank(status);
     DrawCottage(status);
+    DrawJournal(status);
     DrawProperties(status);
+    DrawRestoration(status);
 
     ImGui::Separator();
-    ImGui::TextWrapped("Save your game normally to keep your bank balance, deeds, repairs and income progress.");
+    ImGui::TextWrapped("Save your game normally to keep your bank balance, deeds, repairs, relationships and favors.");
     if (!mFeedback.empty()) {
         ImGui::Spacing();
         ImGui::TextWrapped("%s", mFeedback.c_str());

@@ -7,7 +7,21 @@ struct Actor;
 
 namespace LivingHyrule {
 
-enum class Action { Enable, Disable, Deposit, Withdraw, BuyCottage, BuyProperty, RepairProperty };
+enum class Action {
+    Enable,
+    Disable,
+    Deposit,
+    Withdraw,
+    BuyCottage,
+    BuyProperty,
+    RepairProperty,
+    AcceptFavor,
+    CompleteFavor,
+    AbandonFavor,
+    SetFairRent,
+    SetHighRent,
+    RestoreMarket
+};
 
 struct Status {
     EconomyState economy{};
@@ -26,6 +40,7 @@ struct Status {
 Status GetStatus();
 WorldProgress GetWorldProgress();
 std::string PerformAction(Action action, uint32_t amount = 0);
-std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action action, uint32_t amount = 0);
+std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action action, uint32_t amount,
+                                      uint32_t quotedAmount);
 
 } // namespace LivingHyrule

@@ -24,7 +24,7 @@ constexpr uint8_t RoyalResidentBit(RoyalResidentId id) {
 // The audience belongs to the optional postgame world. Ownership, medallions,
 // and a completed time-split list cannot substitute for actual Ganon evidence.
 // The engine adapter supplies that evidence through GetWorldProgress().
-inline uint8_t RoyalResidentMaskFor(const RoyalAudienceContext &context) {
+inline uint8_t RoyalResidentMaskFor(const RoyalAudienceContext& context) {
     if (!context.enabled || !context.supportedAdventure || !context.normalScene || !context.castleApproach ||
         !context.world.adult || !context.world.ganonDefeated || !IsValidState(context.economy) ||
         context.economy.enabled != 1) {

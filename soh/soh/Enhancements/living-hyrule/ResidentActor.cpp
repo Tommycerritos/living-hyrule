@@ -142,7 +142,7 @@ void LoadResidentText(uint16_t* textId, bool* loadFromMessageTable) {
     if (IsResidentActor(actor) && GetResidentRole(actor) == role && actor->update != nullptr) {
         auto* resident = reinterpret_cast<ResidentActor*>(actor);
         text = reply ? std::string(resident->trade.response)
-                     : BuildDialogue(role) + DescribeTradeOffer(resident->trade.offer);
+                     : DescribeResidentDialogue(actor, resident->trade, BuildDialogue(role));
     }
     CustomMessage message(text);
     message.AutoFormat();
@@ -173,6 +173,7 @@ u16 GetTextId(PlayState*, Actor* actor) {
             resident->trade = {};
             break;
     }
+    PrepareResidentDialogue(resident->trade, actor);
     return textId;
 }
 

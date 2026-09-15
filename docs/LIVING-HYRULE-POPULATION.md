@@ -7,17 +7,17 @@ This is a design for all **110 scene IDs**, `0x00` through `0x6D`, in the
 should gain residents and places that should deliberately remain empty. Room,
 entrance, and age variants within a scene still need individual placement work.
 
-**The current stage has 20 unique resident identities:** three in the original
+**The current stage has 23 unique resident identities:** three in the original
 Kakariko module, nine Hylian townsfolk and travelers, four Kokiri/Goron residents,
-and four Zora/Gerudo residents. The new regional actors, shared purchase/repair
-dialogue, and business supply props are being integrated for a combined build.
+and four Zora/Gerudo residents, plus Zelda, Captain Aren and Maelin in a postgame
+royal audience. Shared favors, relationships and rent choices join direct trade.
 The tables headed **Implemented in source** describe that code; they do not
 claim a successful build or gameplay acceptance. The owner will test the final
 playable result. No game launch is part of this implementation pass.
 
 This remains a small population in selected settlements, not worldwide coverage
-of the 110 scenes. The later cast, interiors, walking routes, relationships,
-population growth, and full reconstruction remain **Planned**.
+of the 110 scenes. The later cast, interiors, wider walking routes, deeper social
+systems, population growth, and full reconstruction remain **Planned**.
 
 The goal from the [local creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md)
 is to make Hyrule feel inhabited while preserving its original adventure. Existing
@@ -359,7 +359,7 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x61` | `SCENE_DEATH_MOUNTAIN_CRATER` | Planned: at most a Goron specialist near a proven safe ledge after Fire R. | Hazardous region stays sparse; no ordinary Hylian work crew or actors on heat/warp routes. |
 | `0x62` | `SCENE_GORON_CITY` | **Source:** Doron and Brakka on the main cavern's lower walkway, room 3. Other workers and mountain routes remain planned. | Child or adult after Fire Medallion: both by day; Brakka at night only with an operating kiln. No ordinary workers during adult captivity. |
 | `0x63` | `SCENE_LON_LON_RANCH` | **Source:** Nessa and Wren. Jory, work animations, and indoor relocation remain planned. | Day: Wren in both eras; Nessa as child or after Epona escape. Night: Wren only with an operating dairy. Races and horse access retain their original roles. |
-| `0x64` | `SCENE_OUTSIDE_GANONS_CASTLE` | No added civilian population during the main quest. | Planned P rebuilding belongs to an explicit safe/restored scene state; do not put workers above the abyss or in the bridge sequence. |
+| `0x64` | `SCENE_OUTSIDE_GANONS_CASTLE` | **Source:** Zelda, Captain Aren and Maelin after the saved Ganon victory. | Adult normal room0, valid enabled economy and Additional residents; day all3, night Aren. Verified lower approach positions; original bridge and castle interior remain untouched. |
 
 ### Debug-only scenes
 

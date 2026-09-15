@@ -3,7 +3,13 @@
 
 using namespace LivingHyrule;
 int failures = 0;
-#define CHECK(x) do { if (!(x)) { std::cerr << "Line " << __LINE__ << ": " #x "\n"; ++failures; } } while (0)
+#define CHECK(x)                                              \
+    do {                                                      \
+        if (!(x)) {                                           \
+            std::cerr << "Line " << __LINE__ << ": " #x "\n"; \
+            ++failures;                                       \
+        }                                                     \
+    } while (0)
 
 int main() {
     WorldProgress child{};
@@ -23,15 +29,21 @@ int main() {
         CHECK(RepairProperty(state, id, crisis) == Result::Unavailable);
         CHECK(!PropertyOperating(state, id, crisis));
         if (!desert) {
-            for (uint32_t i = 0; i < kFramesPerRentPeriod - 1; ++i) CHECK(TickBusinesses(state, child) == 0);
+            for (uint32_t i = 0; i < kFramesPerRentPeriod - 1; ++i)
+                CHECK(TickBusinesses(state, child) == 0);
             CHECK(TickBusinesses(state, child) == kProperties[id].income);
         }
         state.businessFrames[id] = 123;
-        for (int i = 0; i < 100; ++i) CHECK(TickBusinesses(state, crisis) == 0);
+        for (int i = 0; i < 100; ++i)
+            CHECK(TickBusinesses(state, crisis) == 0);
         CHECK(state.businessFrames[id] == 123);
         CHECK(!PropertyOperating(state, id, recovered));
         CHECK(RepairProperty(state, id, recovered) == Result::Success);
+        CHECK(GetRapport(state, PropertyManager(id)) == (PropertyManager(id) == ResidentId::Count ? 0 : 5));
+        const auto paid = state.bankRupees;
         CHECK(RepairProperty(state, id, recovered) == Result::AlreadyRepaired);
+        CHECK(state.bankRupees == paid);
+        CHECK(GetRapport(state, PropertyManager(id)) == (PropertyManager(id) == ResidentId::Count ? 0 : 5));
         CHECK(PropertyOperating(state, id, recovered));
         state.businessFrames[id] = kFramesPerRentPeriod - 1;
         CHECK(TickBusinesses(state, recovered) == kProperties[id].income);
@@ -70,7 +82,40 @@ int main() {
     CHECK(!ShouldClearMarketThreats(recovered, false, true));
     CHECK(!ShouldClearMarketThreats(recovered, true, false));
     CHECK(!PropertyOperating(poor, UINT32_MAX, recovered));
-    if (failures) return 1;
+    CHECK(PropertyManager(8) == ResidentId::Count);
+    CHECK(PropertyManager(UINT32_MAX) == ResidentId::Count);
+    for (uint32_t id = 0; id < kProperties.size(); ++id) {
+        EconomyState trusted{};
+        trusted.enabled = 1;
+        trusted.ownedProperties = 1u << id;
+        const auto manager = PropertyManager(id);
+        const bool hasManager = IsValidResident(manager);
+        for (int rapport : { -100, 0, 9, 10, 100 }) {
+            if (hasManager)
+                trusted.rapport[static_cast<uint32_t>(manager)] = static_cast<int8_t>(rapport);
+            const uint32_t expected =
+                hasManager && rapport >= 10 ? kProperties[id].repairCost * 9 / 10 : kProperties[id].repairCost;
+            CHECK(EffectiveRepairPrice(trusted, id) == expected);
+        }
+        if (hasManager)
+            trusted.rapport[static_cast<uint32_t>(manager)] = 10;
+        const uint32_t quoted = EffectiveRepairPrice(trusted, id);
+        trusted.bankRupees = quoted - 1;
+        CHECK(RepairProperty(trusted, id, recovered) == Result::InsufficientBank);
+        CHECK(trusted.bankRupees == quoted - 1 && trusted.repairedProperties == 0);
+        CHECK(GetRapport(trusted, manager) == (hasManager ? 10 : 0));
+        trusted.bankRupees = quoted;
+        CHECK(RepairProperty(trusted, id, recovered) == Result::Success);
+        CHECK(trusted.bankRupees == 0 && GetRapport(trusted, manager) == (hasManager ? 15 : 0));
+        CHECK(RepairProperty(trusted, id, recovered) == Result::AlreadyRepaired);
+        CHECK(GetRapport(trusted, manager) == (hasManager ? 15 : 0));
+    }
+    CHECK(EffectiveRepairPrice(poor, UINT32_MAX) == 0);
+    poor.rapport[0] = 101;
+    CHECK(EffectiveRepairPrice(poor, 0) == 0);
+    CHECK(RepairProperty(poor, 0, recovered) == Result::InvalidState);
+    if (failures)
+        return 1;
     std::cout << "Regional properties, crisis, repairs and income tests passed\n";
     return 0;
 }

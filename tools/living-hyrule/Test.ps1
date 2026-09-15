@@ -11,8 +11,13 @@ $cmake = Join-Path $cmakeDir 'cmake.exe'
 $ctest = Join-Path $cmakeDir 'ctest.exe'
 $testBuild = Join-Path $Workspace 'build\living-hyrule-tests'
 $jsonInclude = Join-Path $Workspace 'tools\vcpkg\installed\x64-windows-static\include'
+$nativeArchive = Join-Path $Workspace 'build\living-hyrule-vs2022\soh\oot.o2r'
+if (-not (Test-Path -LiteralPath $nativeArchive)) { $nativeArchive = '' }
+$python = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
+$extraOptions = @("-DLIVING_HYRULE_NATIVE_ARCHIVE=$nativeArchive")
+if (Test-Path -LiteralPath $python) { $extraOptions += "-DPython3_EXECUTABLE=$python" }
 
-& $cmake -S (Join-Path $repo 'tests\living-hyrule') -B $testBuild -G 'Visual Studio 17 2022' -A x64 "-DLIVING_HYRULE_JSON_INCLUDE=$jsonInclude"
+& $cmake -S (Join-Path $repo 'tests\living-hyrule') -B $testBuild -G 'Visual Studio 17 2022' -A x64 "-DLIVING_HYRULE_JSON_INCLUDE=$jsonInclude" @extraOptions
 if ($LASTEXITCODE -ne 0) { throw 'Test configuration failed.' }
 & $cmake --build $testBuild --config Release --parallel 2
 if ($LASTEXITCODE -ne 0) { throw 'Test build failed.' }
