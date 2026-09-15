@@ -1,0 +1,32 @@
+# Living Hyrule changelog
+
+## 2026-09-14 — First economy increment
+
+- Added an optional bank account for each normal or Master Quest save file.
+- Added deposits, withdrawals, deposit-all, and fill-wallet actions. Transfers
+  respect wallet capacity and bank limits and change both balances together.
+- Added a Kakariko rental cottage purchased from the ledger while in the village.
+  The prototype price is 1,200 rupees; rent is 25 rupees per ten minutes of eligible
+  active play, credited directly to the bank.
+- Preserved ownership across the age transition. Adult Kakariko sales and rent
+  remain suspended until the Shadow Medallion is obtained.
+- Added normal-save persistence for balances, ownership, rent progress, and
+  lifetime rent earnings. Pausing the economy retains these values.
+- Added strict save-data validation and an opt-in compatibility fallback that
+  preserves an unreadable Living Hyrule section during subsequent game saves.
+- Added automated economy and save-codec checks; both native test suites passed.
+- Compiled and linked the full Windows Debug game. Gameplay acceptance is
+  reserved for the project owner; the new mod has not been runtime-playtested.
+
+This increment establishes the banking and property foundation. The cottage is
+currently a ledger purchase without a physical seller or new interior. Broader
+property ownership, paid reconstruction, population, relationships, postgame,
+equipment, and combat changes remain in development scope for later increments.
+
+## 2026-09-14 — Development environment
+
+- Preserved the clean Ship release and local ROM outside Git.
+- Established the pinned Windows toolchain, upstream/fork remotes, integration
+  branch, source build, isolated runtime, and repository asset guards.
+- Preserved the Living Hyrule creative vision and documented the development
+  workflow.

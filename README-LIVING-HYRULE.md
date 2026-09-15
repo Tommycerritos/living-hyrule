@@ -3,9 +3,11 @@
 An optional life and economy expansion for Ocarina of Time, based on
 [HarbourMasters/Shipwright](https://github.com/HarbourMasters/Shipwright).
 
-**Status: first economy prototype implemented on `feature/living-hyrule-economy`;
-full-game validation pending.** The original main quest, dungeons, story items,
-and progression remain the foundation.
+**Status: first playable economy increment implemented on
+`feature/living-hyrule-economy`. Native automated tests passed, and the full game
+compiled and linked successfully.** Gameplay acceptance is left to the project
+owner; the new mod has not been runtime-playtested. The original main quest,
+dungeons, story items, and progression remain the foundation.
 
 ## Try the prototype
 
@@ -22,10 +24,13 @@ until the Shadow Medallion is obtained. Existing ownership and savings are kept.
 Pausing the economy also preserves balances, ownership, and partial rent progress.
 
 This first cottage is a ledger entry representing ownership. It does not yet add
-a physical seller, alter NPC dialogue, or provide a cottage interior.
+a physical seller, alter NPC dialogue, or provide a cottage interior. The increment
+covers banking, one property's ownership and rent, and normal saving; the wider
+Living Hyrule vision remains future work.
 
 ## Project information
 
+- [Living Hyrule changelog](docs/LIVING-HYRULE-CHANGELOG.md)
 - [Prototype behavior, save architecture, repository policy, and next phases](docs/LIVING-HYRULE.md)
 - [Creative vision (local workstation)](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md)
 - [Windows build and staging helper](tools/living-hyrule/Build.ps1)

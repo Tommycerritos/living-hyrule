@@ -2,9 +2,12 @@
 
 ## Current scope
 
-The first economy prototype is implemented on `feature/living-hyrule-economy`.
-It adds an optional bank account, one Kakariko cottage purchase, persistent
-ownership, and periodic rent. Full-game validation is still pending.
+The first playable economy increment is implemented on
+`feature/living-hyrule-economy`. It adds an optional bank account, one Kakariko
+cottage purchase, persistent ownership, and periodic rent. Implementation and
+native automated tests are complete, and the full game compiled and linked
+successfully. Gameplay acceptance is left to the project owner; the new mod has
+not been runtime-playtested.
 
 The original quest, dungeon progression, songs, medallions, spiritual stones, and
 required items must remain intact. The wider life, social, recovery, and post-Ganon
@@ -97,13 +100,19 @@ registers persistence and gameplay hooks, and `OnPlayerUpdate` advances rent onl
 when the gameplay conditions above are met. The build's recursive source discovery
 finds the new module without a manual source list.
 
-## Verification
+## Verification and user acceptance
 
-Native economy-model and save-codec tests passed. Full-game validation is pending,
-including the complete build, the ledger's in-game controls, normal save/reload,
-save-slot separation, Child/Adult Link recovery behavior, and vanilla progression.
-Use disposable development saves for those checks. A passing model or codec test
-alone does not establish that these integration paths work in the running game.
+Native economy-model and save-codec tests passed. Full-game compilation and linking
+also succeeded. The build was staged at `C:\ZeldaDev\runtime\development`, and
+the staged executable's SHA-256 matches the compiler output.
+
+The project owner will perform gameplay acceptance. No runtime playtest of the
+new mod is claimed, and further agent playtesting is not part of this handoff.
+The ledger controls, normal save/reload, save-slot separation, Child/Adult Link
+recovery behavior, and original quest progression remain for the owner's
+playthrough. Use a disposable development save when trying the increment. The
+successful automated checks and build establish implementation readiness without
+claiming those gameplay paths have been exercised in the running game.
 
 ## Repository and branches
 

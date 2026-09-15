@@ -7,6 +7,8 @@
 #include "soh/ShipInit.hpp"
 
 #include <ship/Context.h>
+#include <ship/window/Window.h>
+#include <ship/window/gui/Gui.h>
 #include <spdlog/spdlog.h>
 #include <type_traits>
 
