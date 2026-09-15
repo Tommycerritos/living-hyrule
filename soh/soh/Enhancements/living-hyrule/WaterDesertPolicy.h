@@ -1,12 +1,13 @@
 #pragma once
 
 #include "Properties.h"
+#include <array>
 #include <cstdint>
 
 namespace LivingHyrule {
 
 enum class WaterDesertResidentId : uint8_t { Lethra, Neris, Rasha, Kesra, Count };
-enum class WaterDesertPlace : uint8_t { None, RiverBank, ValleyApproach, Fortress, Count };
+enum class WaterDesertPlace : uint8_t { None, RiverBank, ValleyApproach, Fortress, RestoredDomain, Count };
 
 struct WaterDesertContext {
     bool enabled = false;
@@ -14,6 +15,7 @@ struct WaterDesertContext {
     bool normalScene = false;
     bool daytime = false;
     bool carpentersFreed = false;
+    bool domainRestored = false; // Actual loaded geometry latch, never just a medallion or payment bit.
     WaterDesertPlace place = WaterDesertPlace::None;
     WorldProgress world{};
     EconomyState economy{};
@@ -41,6 +43,10 @@ inline uint8_t WaterDesertMaskFor(const WaterDesertContext& context) {
                 return working(13) ? bit(WaterDesertResidentId::Neris) : 0;
             return static_cast<uint8_t>(bit(WaterDesertResidentId::Lethra) |
                                         (!world.adult || world.water ? bit(WaterDesertResidentId::Neris) : 0));
+        case WaterDesertPlace::RestoredDomain:
+            return context.domainRestored && world.adult && world.water && active && context.daytime
+                       ? static_cast<uint8_t>(bit(WaterDesertResidentId::Lethra) | bit(WaterDesertResidentId::Neris))
+                       : 0;
         case WaterDesertPlace::ValleyApproach:
             // This placement is on the public, field-side high ground. A child
             // can meet a quartermaster without crossing the guarded bridge.
@@ -50,10 +56,23 @@ inline uint8_t WaterDesertMaskFor(const WaterDesertContext& context) {
         case WaterDesertPlace::Fortress:
             return invited && (context.daytime || working(15)) ? bit(WaterDesertResidentId::Kesra) : 0;
         default:
-            // In particular, no frozen Domain/Fountain or wasteland setup is
-            // made habitable by a medallion or a paid repair bit.
+            // A frozen Domain, the Fountain and wasteland setups do not become
+            // habitable merely through a medallion or a paid business repair.
             return 0;
     }
 }
+
+struct DomainResidentPlacement {
+    WaterDesertResidentId id;
+    float x, y, z;
+    int16_t yaw;
+};
+
+// Two dry room1 walkways. Each resident faces a tested standing/conversation
+// space; the native King, red ice, Skulltula and original routes stay untouched.
+inline constexpr std::array<DomainResidentPlacement, 2> kDomainResidentPlacements{ {
+    { WaterDesertResidentId::Lethra, -200, 168, 200, 16384 },
+    { WaterDesertResidentId::Neris, 560, 404, -100, -16384 },
+} };
 
 } // namespace LivingHyrule

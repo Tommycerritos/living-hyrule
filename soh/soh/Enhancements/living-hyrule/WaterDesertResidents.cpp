@@ -1,6 +1,7 @@
 #include "WaterDesertResidents.h"
 #include "LivingHyrule.h"
 #include "TradeDialogue.h"
+#include "ZoraRestoration.h"
 
 #include "soh/ActorDB.h"
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
@@ -86,6 +87,8 @@ WaterDesertPlace PlaceForScene(int scene) {
     switch (scene) {
         case SCENE_ZORAS_RIVER:
             return WaterDesertPlace::RiverBank;
+        case SCENE_ZORAS_DOMAIN:
+            return WaterDesertPlace::RestoredDomain;
         case SCENE_GERUDO_VALLEY:
             return WaterDesertPlace::ValleyApproach;
         case SCENE_GERUDOS_FORTRESS:
@@ -99,12 +102,14 @@ uint8_t DesiredResidents(const PlayState* play) {
     WaterDesertContext context;
     context.enabled = CVarGetInteger(CVAR_ENHANCEMENT("LivingHyruleResidents"), 0) != 0;
     context.supportedAdventure = IS_VANILLA || IS_MASTER_QUEST;
+    context.place = play != nullptr ? PlaceForScene(play->sceneNum) : WaterDesertPlace::None;
+    const int room = context.place == WaterDesertPlace::RestoredDomain ? 1 : 0;
     context.normalScene = play != nullptr && play == gPlayState && gSaveContext.gameMode == GAMEMODE_NORMAL &&
                           gSaveContext.fileNum >= 0 && gSaveContext.fileNum <= 2 && !IS_CUTSCENE_LAYER &&
-                          play->roomCtx.curRoom.num == 0;
+                          play->roomCtx.curRoom.num == room;
     context.daytime = IS_DAY;
     context.carpentersFreed = (gSaveContext.eventChkInf[9] & 0xF) == 0xF;
-    context.place = play != nullptr ? PlaceForScene(play->sceneNum) : WaterDesertPlace::None;
+    context.domainRestored = IsZoraRestorationActive();
     context.world = GetWorldProgress();
     context.economy = gSaveContext.ship.livingHyrule;
     return WaterDesertMaskFor(context);
@@ -120,18 +125,28 @@ std::string BuildDialogue(WaterDesertResidentId id) {
     std::string text = "%g" + std::string(GetWaterDesertResidentName(id)) + "%w. ";
     switch (id) {
         case WaterDesertResidentId::Lethra:
+            if (IsZoraRestorationActive()) {
+                text += "Spring keeper. Flowing water has brought us back inside. I am sorting tools and supplies "
+                        "for the families who rely on the Domain.";
+                break;
+            }
             text += !world.adult   ? "Spring keeper. A clean waterway begins far upstream. I arrange supplies for the "
                                      "families who tend its banks."
                     : !world.water ? "I have taken refuge beside the lower river. The Domain is frozen, and trouble "
                                      "downstream has cut our supply routes. We cannot trade our way past that."
-                                   : "The lake's trouble has eased, and the open river can carry supplies again. The "
-                                     "Domain is still frozen; I keep our work here on these usable banks.";
+                                   : "The lake's trouble has eased, and the open river can carry supplies again. I "
+                                     "keep this stop supplied for the families upstream.";
             break;
         case WaterDesertResidentId::Neris:
+            if (IsZoraRestorationActive()) {
+                text += "Waterway courier. Deliveries reach the Domain again. The Lake shortcut remains icebound, "
+                        "so I use the river route.";
+                break;
+            }
             text += IS_DAY ? "Waterway courier. Lethra counts tools; I count bends in the river. A reliable delivery "
                              "is a promise kept to someone you may never meet."
-                           : "The supply partnership supports an evening delivery. I follow the open river, never the "
-                             "icebound passages upstream.";
+                           : "The supply partnership supports an evening delivery. I follow the open river and keep "
+                             "a careful count of every delivery.";
             break;
         case WaterDesertResidentId::Rasha:
             text += !world.adult    ? "Caravan quartermaster. This approach is where I count our supplies before the "
@@ -359,11 +374,19 @@ struct Placement {
 };
 // Authored dry ground, checked against local collision and water-box resources.
 // These are stationary bank/approach workers, not swimmers or quest guards.
-constexpr std::array<Placement, kResidentCount> placements = { {
+constexpr std::array<Placement, kResidentCount + 2> placements = { {
     { WaterDesertResidentId::Lethra, WaterDesertPlace::RiverBank, { -1350, 100, -200 }, 0x4000 },
     { WaterDesertResidentId::Neris, WaterDesertPlace::RiverBank, { -1100, 100, -150 }, -0x4000 },
     { WaterDesertResidentId::Rasha, WaterDesertPlace::ValleyApproach, { 1300, 40, -400 }, -0x4000 },
     { WaterDesertResidentId::Kesra, WaterDesertPlace::Fortress, { -900, 16, -500 }, 0x4000 },
+    { kDomainResidentPlacements[0].id,
+      WaterDesertPlace::RestoredDomain,
+      { kDomainResidentPlacements[0].x, kDomainResidentPlacements[0].y, kDomainResidentPlacements[0].z },
+      kDomainResidentPlacements[0].yaw },
+    { kDomainResidentPlacements[1].id,
+      WaterDesertPlace::RestoredDomain,
+      { kDomainResidentPlacements[1].x, kDomainResidentPlacements[1].y, kDomainResidentPlacements[1].z },
+      kDomainResidentPlacements[1].yaw },
 } };
 
 bool ClearGround(PlayState* play, const Vec3f& candidate, Vec3f& ground) {
@@ -374,8 +397,17 @@ bool ClearGround(PlayState* play, const Vec3f& candidate, Vec3f& ground) {
         floor->normal.y < 26000)
         return false;
     ground = { candidate.x, y, candidate.z };
-    constexpr std::array<Vec3f, 4> offsets = { { { 32, 0, 0 }, { -32, 0, 0 }, { 0, 0, 32 }, { 0, 0, -32 } } };
-    for (const auto& offset : offsets) {
+    constexpr std::array<Vec3f, 8> offsets = { { { 32, 0, 0 },
+                                                 { -32, 0, 0 },
+                                                 { 0, 0, 32 },
+                                                 { 0, 0, -32 },
+                                                 { 22, 0, 22 },
+                                                 { 22, 0, -22 },
+                                                 { -22, 0, 22 },
+                                                 { -22, 0, -22 } } };
+    const size_t footprintCount = play->sceneNum == SCENE_ZORAS_DOMAIN ? offsets.size() : 4;
+    for (size_t index = 0; index < footprintCount; ++index) {
+        const auto& offset = offsets[index];
         probe = { ground.x + offset.x, y + 24.0f, ground.z + offset.z };
         floor = nullptr;
         const float edge = BgCheck_EntityRaycastFloor1(&play->colCtx, &floor, &probe);
@@ -387,7 +419,8 @@ bool ClearGround(PlayState* play, const Vec3f& candidate, Vec3f& ground) {
         if (BgCheck_SphVsFirstPoly(&play->colCtx, &probe, 22.0f))
             return false;
     }
-    float waterHeight = 0.0f;
+    // Domain's upper waterfall volume also tests the supplied query height.
+    float waterHeight = y;
     WaterBox* water = nullptr;
     if (WaterBox_GetSurface1(play, &play->colCtx, ground.x, ground.z, &waterHeight, &water) && waterHeight > y + 2.0f)
         return false;
