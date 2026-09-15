@@ -1,5 +1,50 @@
 # Living Hyrule changelog
 
+## 2026-09-15 - Kingdom recovery and royal estate (schema five; installed)
+
+- Added an 18,000-bank-rupee Domain restoration after the Water Medallion and
+  original Water Temple blue warp. Ordinary pools and waterfalls thaw on the
+  next eligible visit, with collision and drawing selected together. King Zora,
+  Blue Fire red ice, shop ice, adult quest actors and the closed Lake shortcut
+  retain their original progression requirements.
+- Added daytime Domain work stops for Lethra and Neris only when the loaded
+  restoration is active. Their River stops and existing schedules remain a
+  fallback; no residents are placed inside frozen water or the Fountain.
+- Added free royal garden visits through Aren or the ledger after recorded
+  Ganon victory and Market restoration funding. Zelda and Maelin appear by day,
+  Aren keeps night watch, and native garden time remains paused. The east exit
+  and explicit return choices lead back to the adult castle approach. Remembered
+  visits preserve an escape route and suppress original story actors even if
+  resource preparation fails. Child story and ending setups are untouched.
+- Added a real castle-estate deed for 500,000 bank rupees, purchased in the
+  prepared garden after all eight regional charters. Zelda's trust at 50 reduces
+  it to 450,000. The household stays at home and recognizes the ownership;
+  finished castle rooms are not included.
+- Added three once-per-person gifts for all 23 residents: provisions for 60,
+  work supplies for 180 and a keepsake for 350 bank rupees. Preferred gifts earn
+  8 trust; other gifts earn 4. Zelda recognizes eight finite recovery deeds once
+  each for 5 trust, without granting points for repeated ordinary conversation.
+- Connected royal gifts, Aren's queued travel and Maelin's purchase to owned
+  quote/reply dialogue. Shorter royal messages include garden/approach, trust,
+  ownership and charter context without repeating deed recognition on cycling.
+- Inner schema five migrates schemas 1 through 4, preserving their existing
+  state and adding initially empty restoration, estate, gift and recognition
+  fields. Outer version one and malformed/future-payload preservation remain.
+- Added three bounded native-enemy encounters under the challenge preference:
+  adult Trail red Tektite at night after Fire; child River blue Tektite at night
+  after Zora's Sapphire; adult Colossus small Leever by day after Spirit and
+  Gerudo membership. Field is excluded. Each entry allows at most one attempt,
+  with resource/clearance checks; Colossus needs a rare native-spawner rest window.
+- **Installed verification:** commit **e575c936c**, embedded **e575c93**, passed
+  all **25 native and local-resource suites**, full compilation and installation.
+  At 14:18:56 UTC both modded runtimes matched the compiled executable and port
+  archive. Both settings files and all four saves were unchanged. The prior
+  executable is backed up; development is paused for the owner's test.
+
+No game was launched. Full castle rooms, new shop interiors, broader populations
+and daily schedules, new equipment models and deeper combat remain unfinished.
+The three regional encounters are included in this installed milestone.
+
 ## 2026-09-15 - Relationships, reconstruction and regional stewardship (schema four; installed)
 
 - Added permanent identities and trust for 23 residents, ten finite delivery
@@ -36,9 +81,9 @@
   strict floating-point warning in Market door drawing was corrected before the
   successful build. Receipts and logs are recorded in the worklog.
 
-No game was started. These are completed source changes with automated checks,
-not a claim of installation or gameplay acceptance. Full building/interior/castle
-restoration, wider daily routines and deeper combat remain unfinished.
+No game was started. The successful installation and automated checks do not
+establish gameplay acceptance. At this stage, full building/interior/castle
+restoration, wider daily routines and deeper combat remained unfinished.
 
 ## 2026-09-15 - World life, direct trade and combat challenge
 

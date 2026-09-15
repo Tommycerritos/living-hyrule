@@ -13,10 +13,14 @@ and four Zora/Gerudo residents, plus Zelda, Captain Aren and Maelin in a postgam
 royal audience. Shared favors, relationships and rent choices join direct trade.
 Pella and Edda have short walking routines; a funded Market exterior, regional
 cloth dyes and charter recognition are also integrated in the current source.
-The tables headed **Implemented in source** describe code in installed build
-**46c17fa**. All 17 native/local-resource suites and the full configure, compile,
-link and installation passed. The owner will test the final playable result;
-no game launch or gameplay acceptance is part of this implementation pass.
+The schema-five source adds active-Domain stops for Lethra/Neris, a visitable
+royal garden, estate ownership, finite gifts and Zelda's recovery recognition.
+Three optional native-enemy encounters have separate regional gates.
+The tables headed **Implemented in source** describe code included in installed
+build **e575c93** (source **e575c936c**). All **25 native and local-resource suites**,
+full compilation and installation verification passed. Both modded runtimes
+match the compiled files; settings and saves are unchanged. Development is
+paused for the owner's test. No game launch or gameplay acceptance is claimed here.
 
 This remains a small population in selected settlements, not worldwide coverage
 of the 110 scenes. The later cast, interiors, wider walking routes, deeper social
@@ -109,8 +113,8 @@ families with their own behavior, not the original actors' quest or reward logic
 
 | Resident | Place and work | Daytime availability | Night availability | Property dialogue |
 | --- | --- | --- | --- | --- |
-| Lethra | Spring keeper on a dry lower Zora's River bank | Child and adult; remains as a refugee during the water crisis | Absent | Waterway supplies (13); adult trade waits for Water Medallion |
-| Neris | Zora courier on the same river bank | Child; adult after Water Medallion | Present only with operating waterway supplies | Conversation only |
+| Lethra | Spring keeper at the River bank; also a dry room-one Domain work stop | River: child and adult, including water-crisis refuge. Domain: adult with active paid restoration and enabled economy | Absent | Waterway supplies (13); adult trade waits for Water Medallion. Also offers Domain restoration and gifts |
+| Neris | Zora courier at the River bank; also a dry room-one Domain work stop | River: child or adult after Water Medallion. Domain: adult with active paid restoration and enabled economy | River only, with operating waterway supplies | Conversation, deliveries and gifts |
 | Rasha | Caravan quartermaster on the public, field-side high ground in Gerudo Valley | Child as a nontrading visitor; adult after all four carpenter rescues and membership | Adult with those access conditions and an operating caravan partnership | Caravan partnership (14); adult trade also needs Spirit Medallion |
 | Kesra | Cloth trader at the lower fortress common approach | Adult after all four carpenter rescues and membership | Same access conditions and an operating textile workshop | Textile workshop (15); trade also needs Spirit Medallion |
 
@@ -118,7 +122,39 @@ Zoras use their native skeleton and skin; Gerudos use compatible civilian art,
 distinct hairstyles, poses, and modest scale differences. New actors have no
 arrest, rescue, membership-card, archery-reward, or gate authority. Daytime Gerudo
 conversation before Spirit recovery does not permit a purchase. No new Zoras
-spawn in the frozen Domain or Fountain, and no thaw is implemented.
+spawn in the frozen Domain or Fountain. The 18,000-rupee Domain investment
+requires the Water Medallion and original Water Temple blue warp; its actual
+loaded restoration, rather than payment alone, enables the new daytime stops.
+River schedules remain available if the Domain is frozen, unavailable or not
+visited. No swimming routine or cross-scene travel simulation is implied.
+Ordinary ice and water recover together while King Zora, Blue Fire red ice,
+shop ice, adult Skulltula and the sealed Lake shortcut retain their native rules.
+
+### Royal household and garden
+
+| Resident | Places | Day | Night | Shared conversation topics |
+| --- | --- | --- | --- | --- |
+| Zelda | Ruined castle approach; prepared royal garden | Present after recorded Ganon victory with valid enabled economy and Additional residents | Absent | Gifts; eight once-only recovery recognitions; trust, charters and estate ownership |
+| Captain Aren | Same audience sites | Present | Present | Gifts; free garden invitation or return to the adult castle approach |
+| Maelin | Same audience sites | Present | Absent | Gifts; estate-deed purchase when eligible; household records and regional standing |
+
+Garden visits unlock after Ganon and Market restoration funding through Aren
+or the ledger. The original ordinary garden is used with adult Link, safe dry
+placements and its native paused time. Its child Zelda/Impa/guard story actors
+are excluded from this adult visit; original child story and ending setups
+remain intact. The east doorway and explicit return controls preserve a route
+back to the adult castle approach, including if residents or the economy are
+turned off during the visit. A failed resource preparation retains an empty
+escape route rather than loading original story actors.
+
+Maelin offers the castle-estate deed in the prepared garden after all eight
+regional charters: 500,000 bank rupees, or 450,000 with Zelda's trust at 50.
+The household stays and recognizes the deed; finished castle rooms are not
+included. All 23 residents accept three gift kinds once per person (60/180/350
+rupees, preferred gift +8 trust, other +4). Zelda's five adult temple recoveries,
+Market restoration, Domain restoration and all-eight-charters milestone each
+earn +5 once in her conversation. Repeated greetings and cycling topics do not
+repeat these awards.
 
 ### Visible business supplies
 
@@ -153,10 +189,11 @@ use of the saved final-boss defeat timestamp, not that wider postgame system.
 - **Death Mountain:** Goron capture and the Fire Temple crisis empty work sites.
   Story recovery allows the new workers to return. Paid business repairs reopen
   income; physical restoration and construction work remain later phases.
-- **Water region:** the Water Temple allows the lake economy to recover. Zora's
-  Domain remains visibly frozen in the original adult game, so the medallion
-  alone must not place swimming residents inside ice. Thawing or restored geometry
-  needs a separate implemented recovery stage.
+- **Water region:** the Water Temple allows the lake economy to recover. The
+  medallion alone leaves the Domain frozen. Its separate paid restoration also
+  requires the original blue warp and must be active in the loaded scene before
+  new residents use its dry work stops. Broader households and water routines
+  remain planned.
 - **Kakariko:** the first population uses the Shadow Medallion as its adult return
   condition. Bram can remain during the crisis without enabling rent or sales.
 - **Gerudo territory:** membership, the rescued carpenters, local security, and
@@ -167,8 +204,23 @@ use of the saved final-boss defeat timestamp, not that wider postgame system.
   Ganon-defeat timestamp and enabled economy, matching the market enemy cleanup.
   Building restoration remains separate work.
 - **Postgame:** entering an ending map is not proof of adventure completion.
-  Current relief reads the existing saved flag; new ending flow, postgame save
-  creation, castle life, and broad restored-world behavior remain future work.
+  Relief and royal visits read the saved final-boss timestamp. The implemented
+  garden/deed system does not change the ending or add finished castle rooms;
+  wider household schedules and broad restored-world behavior remain planned.
+
+### Optional regional encounters implemented in source
+
+The independent challenge preference can add one native enemy in each of three
+limited settings: a red Tektite on adult Death Mountain Trail at night after the
+Fire Medallion; a blue Tektite in child Zora's River at night after Zora's Sapphire;
+and a small Leever in adult Desert Colossus by day after the Spirit Medallion and
+Gerudo membership. Hyrule Field has no added encounter, and dungeons gain none.
+
+Each scene entry permits at most one attempt when the player is nearby. Ground,
+actors, resources and compatibility checks can skip it. The Colossus additionally
+requires a rare quiet interval in its native Leever spawner, so its appearance
+is not guaranteed. These enemies have short lifetimes and stay within bounded
+areas; they do not represent broader population or combat coverage.
 
 ### Density, time, and routes
 
@@ -209,14 +261,14 @@ authorship and permission review.
 
 ## Wider regional cast and future roles
 
-The 20 names in the implementation tables above now have source implementations
+The 23 names in the implementation tables above now have source implementations
 for only those locations and schedules. All other names below, and additional
 roles or places for existing names, remain proposals. New names are working names.
 
 | Region | Cast and daily life |
 | --- | --- |
 | Kakariko and graveyard | **Mira**, a cloth-mender who trades hems for village news; **Sella**, a night steward at the guest house; **Orris**, a mason who tends paths and gravestones; **Iven**, a young courier learning the mountain road. Mira is intended for a civilian female model, expanding the initial carpenter-family silhouettes. |
-| Castle Town and castle | **Vessa**, a grocer who remembers displaced customers; **Hadrin**, a porter who knows every delivery entrance; **Pella**, a lantern keeper; **Corren**, a junior guard; **Meret**, a records clerk; **Alda**, a garden worker. In the future postgame they discuss safety, rebuilding, and who has returned. |
+| Castle Town and castle | **Vessa**, a grocer who remembers displaced customers; **Hadrin**, a porter who knows every delivery entrance; **Pella**, a lantern keeper; **Corren**, a junior guard; **Meret**, a records clerk; **Alda**, a garden worker. The implemented Market workers discuss safety and recovery; Corren, Meret and Alda remain planned. |
 | Hyrule Field and Lon Lon Ranch | **Nessa**, a feed buyer; **Jory**, a fence repairer; **Caro**, a road courier; **Hollis**, a mule-and-cart trader represented initially without a new vehicle; **Wren**, a stable hand who worries about frightened horses. Their routes connect settlements instead of creating permanent roadside crowds. |
 | Kokiri Forest and Lost Woods | **Fenn**, a seed sorter; **Luma**, a berry gatherer; **Tavi**, a path watcher; **Nell**, a game organizer; **Bori**, a leaf-and-bark craftsperson. They stay within believable forest boundaries and shelter during the adult crisis. |
 | Death Mountain and Goron City | **Doron**, a stone grader; **Brakka**, a kiln tender; **Muro**, a hauling foreman; **Gorrin**, a young apprentice; **Rukka**, a rest-stop cook. Their jobs give the food shortage, captivity, and later recovery an everyday meaning. |
@@ -280,7 +332,7 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x1F` | `SCENE_BACK_ALLEY_NIGHT` | Planned: Pella tending lights and one late-returning resident. | C night; a quieter alley, not a second daytime market. |
 | `0x20` | `SCENE_MARKET_DAY` | **Source:** Vessa and Hadrin. Additional customers remain planned. | Child day; adult only with the saved Ganon-defeat timestamp and enabled economy. |
 | `0x21` | `SCENE_MARKET_NIGHT` | **Source:** Pella tending lights. | Child night; adult only with the saved Ganon-defeat timestamp and enabled economy. Preserve the dog search and doors. |
-| `0x22` | `SCENE_MARKET_RUINS` | **Source:** Vessa/Hadrin by day and Pella by night after the relief gate. | Adult, saved Ganon-defeat timestamp, enabled economy. No civilians before that gate, no rebuilt geometry or construction crews. |
+| `0x22` | `SCENE_MARKET_RUINS` | **Source:** Vessa/Hadrin by day and Pella by night after the relief gate. | Adult, saved Ganon-defeat timestamp, enabled economy. No civilians before that gate. Funded exterior restoration appears on re-entry; shop interiors and alleys remain closed. |
 | `0x23` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_DAY` | Planned: Meret consulting records and one quiet pilgrim away from the entrance. | C day; no crowd over the story approach or Gossip Stones. |
 | `0x24` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_NIGHT` | Planned: one watchful caretaker near an existing safe edge. | C night; keep the temple's stillness. |
 | `0x25` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_RUINS` | No added everyday visitors in A; planned P caretaker after town safety. | Preserve adult story arrival and the ruined landscape. |
@@ -335,7 +387,7 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x47` | `SCENE_CUTSCENE_MAP` | Excluded. | No ambient spawning in cutscene-only staging. |
 | `0x48` | `SCENE_WINDMILL_AND_DAMPES_GRAVE` | Planned: one windmill-side maintenance visitor only after room/entrance discrimination. | Zero additions in Dampe's race route, grave, or song interaction space. |
 | `0x49` | `SCENE_FISHING_POND` | Planned: Sori or one shore spectator, never an extra competing fishing actor initially. | Day leisure, quiet nights; preserve proprietor, fish AI, records, and prizes. |
-| `0x4A` | `SCENE_CASTLE_COURTYARD_ZELDA` | Excluded during the original story. | Future P castle life needs its own explicit setup; do not place a second Zelda here. |
+| `0x4A` | `SCENE_CASTLE_COURTYARD_ZELDA` | **Source:** prepared adult royal-garden visit with Zelda, Aren and Maelin. | Post-Ganon + funded Market; day all three, night Aren. Original child story and ending setups remain unchanged; adult visits suppress original story actors and preserve a safe return exit. No finished castle rooms. |
 | `0x4B` | `SCENE_BOMBCHU_BOWLING_ALLEY` | Planned: one spectator in an audited lobby or side area. | Open hours; bowling lanes, camera, chickens, targets, and rewards stay clear. |
 | `0x4C` | `SCENE_LON_LON_BUILDINGS` | Planned: Nessa visiting the household or Wren at a work area, selected per room. | Preserve Talon's game, cows, bedroom context, and day/night occupancy. |
 | `0x4D` | `SCENE_MARKET_GUARD_HOUSE` | Planned: Corren or a relief guard near a clear wall. | C duty changes; preserve pots, collectible access, and the adult scene's actual condition. |
@@ -350,11 +402,11 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x51` | `SCENE_HYRULE_FIELD` | **Source:** Caro and Hollis at fixed travel stops. Walking routes and further pairs remain planned. | Day only: child or adult with Forest Medallion. No night additions among Stalchildren or across Epona routes. |
 | `0x52` | `SCENE_KAKARIKO_VILLAGE` | **Source:** Tavin, Bram, and Orlen; additional regional cast remains planned. | Day only: child all three; adult crisis Bram only; Shadow recovery all three. No current night or indoor schedule. |
 | `0x53` | `SCENE_GRAVEYARD` | Planned: Orris tending paths and one respectful visitor. | Day work; sparse dusk mourning; no blocking tombs, race access, Dampe, or the Shadow Temple route. |
-| `0x54` | `SCENE_ZORAS_RIVER` | **Source:** Lethra and Neris on a dry lower bank. Sori and other routes remain planned. | Day: Lethra in both eras, Neris as child or after Water Medallion. Night: Neris only with operating waterway supplies. |
+| `0x54` | `SCENE_ZORAS_RIVER` | **Source:** Lethra and Neris on a dry lower bank, retained as the Domain fallback. Sori and other routes remain planned. | Day: Lethra in both eras, Neris as child or after Water Medallion. Night: Neris only with operating waterway supplies. Lethra can offer paid Domain restoration after the Water Temple requirements. |
 | `0x55` | `SCENE_KOKIRI_FOREST` | **Source:** Fenn and Luma in room 0. Nell, Bori, and further work groups remain planned. | Day only: child or adult with Forest Medallion. No adult-crisis or indoor substitute placement. |
 | `0x56` | `SCENE_SACRED_FOREST_MEADOW` | Planned: at most Tavi near the safe approach after Forest R. | Sparse by design; no villagers in the maze during danger or beside Saria's story position. |
 | `0x57` | `SCENE_LAKE_HYLIA` | **Source:** Vero and Edda at lakeside stops. Sori and further visitors remain planned. | Day: Edda in both eras; Vero as child or after Water Medallion. Night: Edda only with an operating fishing cooperative. |
-| `0x58` | `SCENE_ZORAS_DOMAIN` | Planned: Lethra, Neris, and small Zora households on appropriate ledges and water routes. | C inhabited; frozen A sparse/absent as geometry demands. R return requires actual safe/thawed areas, not the Water Medallion alone. |
+| `0x58` | `SCENE_ZORAS_DOMAIN` | **Source:** Lethra and Neris at dry room-one work stops during active paid restoration. Larger households and swimming routes remain planned. | Adult daytime, enabled economy, Water Medallion + native blue warp and 18,000-rupee restoration active on entry. Frozen/child/night variants gain no residents here. King Zora, red ice and the Lake shortcut retain their rules. |
 | `0x59` | `SCENE_ZORAS_FOUNTAIN` | Planned: one Zora spring keeper at a safe outer ledge. | C quiet stewardship; A no invented open-water work through ice; later restoration stage must match geometry. Jabu-Jabu and access routes remain clear. |
 | `0x5A` | `SCENE_GERUDO_VALLEY` | **Source:** Rasha on field-side high ground. Orlen's visit and a lookout remain planned. | Child daytime conversation only. Adult requires all four rescues and membership; Spirit additionally gates trade. Adult night needs an operating caravan partnership. |
 | `0x5B` | `SCENE_LOST_WOODS` | Planned: Tavi at a known safe junction and rare Kokiri gathering visits. | C sparse; A more caution; Forest R limited return. Never mark every exit with helpful crowds or intrude on Skull Kid and trade encounters. |
@@ -366,7 +418,7 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x61` | `SCENE_DEATH_MOUNTAIN_CRATER` | Planned: at most a Goron specialist near a proven safe ledge after Fire R. | Hazardous region stays sparse; no ordinary Hylian work crew or actors on heat/warp routes. |
 | `0x62` | `SCENE_GORON_CITY` | **Source:** Doron and Brakka on the main cavern's lower walkway, room 3. Other workers and mountain routes remain planned. | Child or adult after Fire Medallion: both by day; Brakka at night only with an operating kiln. No ordinary workers during adult captivity. |
 | `0x63` | `SCENE_LON_LON_RANCH` | **Source:** Nessa and Wren. Jory, work animations, and indoor relocation remain planned. | Day: Wren in both eras; Nessa as child or after Epona escape. Night: Wren only with an operating dairy. Races and horse access retain their original roles. |
-| `0x64` | `SCENE_OUTSIDE_GANONS_CASTLE` | **Source:** Zelda, Captain Aren and Maelin after the saved Ganon victory. | Adult normal room0, valid enabled economy and Additional residents; day all3, night Aren. Verified lower approach positions; original bridge and castle interior remain untouched. |
+| `0x64` | `SCENE_OUTSIDE_GANONS_CASTLE` | **Source:** Zelda, Captain Aren and Maelin after the saved Ganon victory; Aren can arrange an eligible garden visit. | Adult normal room0, valid enabled economy and Additional residents; day all3, night Aren. Original bridge and castle interior remain untouched; garden travel is a separate scene visit. |
 
 ### Debug-only scenes
 
@@ -468,7 +520,10 @@ placement or gameplay behavior without the owner's acceptance.
 - Current actors: [Kakariko](../soh/soh/Enhancements/living-hyrule/ResidentActor.cpp),
   [Hylian regional residents](../soh/soh/Enhancements/living-hyrule/WorldResidents.cpp),
   [Kokiri/Goron](../soh/soh/Enhancements/living-hyrule/ForestMountainResidents.cpp),
-  and [Zora/Gerudo](../soh/soh/Enhancements/living-hyrule/WaterDesertResidents.cpp).
+  [Zora/Gerudo](../soh/soh/Enhancements/living-hyrule/WaterDesertResidents.cpp),
+  and [royal household](../soh/soh/Enhancements/living-hyrule/RoyalAudience.cpp).
+- [Royal garden visits](../soh/soh/Enhancements/living-hyrule/RoyalEstate.cpp)
+  and [Domain restoration](../soh/soh/Enhancements/living-hyrule/ZoraRestoration.cpp).
 - [Shared transaction dialogue](../soh/soh/Enhancements/living-hyrule/TradeDialogue.cpp),
   [decorative supplies](../soh/soh/Enhancements/living-hyrule/PropertyScenery.cpp),
   and [property rules and contact list](LIVING-HYRULE-PROPERTIES.md).
@@ -492,13 +547,14 @@ placement or gameplay behavior without the owner's acceptance.
 
 Next work can add Mira as the missing cloth-workshop contact, bounded indoor
 schedules and more walking/work routines beyond Pella and Edda. Existing
-relationships, ten finite favors, rent treatment, Market exterior funding and
-charter recognition are implemented; gifts, deeper social behavior, population
-growth and staffing simulation remain future work. Full building reconstruction,
-new interiors, Zelda's wider daily life and castle ownership/restoration still
-need their own systems and save design. Eight regional dyes change native cloth
-colors; new equipment models and deeper combat also remain unfinished.
+relationships, ten finite favors, rent treatment, finite gifts, recovery
+recognition, Market/Domain funding, garden visits and estate ownership are
+implemented in source. Deeper social behavior, population growth, staffing,
+full castle rooms, new shop interiors and Zelda's wider daily life remain
+unfinished. Eight regional dyes change native cloth colors; new equipment models
+also remain unfinished. The three native-enemy encounters described above are
+implemented and source-verified; broader encounter coverage remains unfinished.
 
 Keep deployment incremental and review the owner's final gameplay feedback
-before describing placements or presentation as accepted. The current source's
-17 passing suites and successful installed build do not replace gameplay checks.
+before describing placements or presentation as accepted. The installed stage's
+25 passing suites and verified build do not establish gameplay acceptance.

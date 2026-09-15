@@ -1,102 +1,90 @@
-# Living Hyrule overnight checkpoint
+# Living Hyrule test-build checkpoint
 
-## Direction and continuation
+## Current request and frozen scope
 
-Implement the complete creative vision as real game code. Never launch the game
-or automate gameplay. The owner tests final results. Preserve vanilla, ROM,
-assets, settings and saves; source-only Git guards remain mandatory.
+The owner asked to stop further development, finish a stable checkpoint, install
+its mods into the game and let them test. Do not launch the game. The overnight
+heartbeat living-hyrule-overnight-development is PAUSED. Do not resume automatic
+development while the owner tests unless they ask.
 
-Heartbeat living-hyrule-overnight-development is ACTIVE every15minutes until
-08:00 September15,2026 America/Chihuahua =14:00UTC. Use UTC, because Windows
-reports a different offset. At cutoff finish a safe checkpoint, pause the
-heartbeat and report implemented versus remaining work honestly.
+Installed source: e575c936c2240635421293d6923b3adcac2d6a9d from
+feature/living-hyrule-kingdom-recovery; embedded revision e575c93.
+All 25 native/local-resource suites, full configure/compile/link, Stage and
+installation verification passed. Installed UTC: 2026-09-15T14:18:56Z.
+C:\ZeldaDev\docs\LATEST-BUILD.json is the installed-build authority.
 
-## Last installed build: relationships and regional progression
+## Implemented in the installed build
 
-The full configure, compile, link and Stage succeeded. Seventeen native/local
-resource suites passed. No game was started.
+- Funded adult Zora Domain water restoration, preserving King Zora, red ice,
+  Skulltula, required progression and a closed underwater Lake shortcut.
+  Lethra and Neris also occupy verified restored-Domain walkways by day.
+- Safe postgame royal garden visits through Captain Aren, a persistent return
+  route and the household's garden placements. Maelin sells the estate deed
+  after all eight charters; Zelda's trust can discount it. Full castle rooms
+  remain unfinished.
+- Three finite gifts per resident, saved gift memories, context-sensitive royal
+  conversations and eight once-only acknowledgments of completed deeds.
+- Three bounded optional native outdoor encounters on the Trail, River and
+  Colossus; original enemy room-clear bookkeeping remains unchanged. The
+  Colossus addition requires a rare original-spawner rest window. No Field or
+  dungeon additions.
+- Save schema five validates new state and migrates supported schemas one
+  through four. Unknown/future/malformed state remains preserved read-only.
+- All prior bank/cottage/business/resident/favor/Market/dye/charter systems.
 
-- Code:46c17fa9efb8e01b6ea0ce1367043d3ce165b784; embedded46c17fa.
-- Installed UTC:2026-09-15T08:09:20Z.
-- Executable:C:\ZeldaDev\runtime\development\soh.exe.
-- Alternate:C:\ZeldaDev\runtime\living-hyrule-playtest\soh.exe.
-- SHA256 for compiled and both installed files:
-  70838903feb8826cd8195c03970a262d2bfaea9a66f930710d1c655316b7fcd0.
-- Size105,809,920 bytes; seven actual binary feature/revision markers verified.
-- Desktop launcher:C:\Users\Guest\Desktop\Living Hyrule (Modded).lnk.
-- Receipts:C:\ZeldaDev\docs\LATEST-BUILD.json and BUILD-RECOVERY-PROGRESSION-46c17fa.json.
-- Logs:C:\ZeldaDev\logs\overnight-recovery-progression-configure-final.log,
-  overnight-recovery-progression-build-final.log,
-  overnight-recovery-progression-stage.log,
-  overnight-recovery-progression-tests.log.
+## Verification and integration
 
-Initial compilation rejected implicit double-to-float rotation conversions in
-Market closure drawing. Explicit native float conversions fixed the warnings;
-configuration and the full build then passed with strict warnings intact.
+Final Test.ps1: 25/25 passed, including five read-only local native-archive suites.
+Nine integrated engine translation units passed strict /W3 /WX syntax; the
+encounter module and its ChallengeMode integration passed separate strict checks.
+Peer reviews fixed pre-player Domain funding detection, delayed travel safety,
+remembered-garden fallback handling and a parentless Leever repeat-drop defect.
+Royal text buffer bounds were checked. These are source/compiler/resource
+checks; gameplay and visual acceptance still belong to the owner.
 
-## Included in that executable
+The new commits contain only source/tests. Source-only history audit found no
+ROM, media, game archive, binary, personal settings or save additions. Hooks and
+ignore rules remain enabled; upstream push stays disabled.
 
-Twenty-three original resident identities, including postgame Zelda, Captain
-Aren and Maelin. Regional day/night/story schedules, direct property/bank
-conversations, supply props, and short validated walking routines for Pella
-and Edda. Ten finite favors, persistent signed rapport, locked fair/high rent,
-trusted repair discounts and a journal are active source integrations.
+## Installed artifact and preservation
 
-Paid Market exterior restoration uses verified native child scenery with
-private compatible collision, closed inactive doors/alleys, preserved adult
-quest actors, resource retention and scene-latched presentation. Free post-Ganon
-Redead removal remains separate. Full shop interiors are not rebuilt.
+Backup: C:\ZeldaDev\backups\before-kingdom-recovery-20260915-134929UTC.
+It contains both previous executables/port archives/settings, the previous receipt
+and all four existing save fingerprints. The prior 46c17fa executable SHA256 is
+70838903feb8826cd8195c03970a262d2bfaea9a66f930710d1c655316b7fcd0.
 
-Eight purchasable regional clothing dyes apply to native Link and pause previews,
-yielding to existing cosmetics/custom models/Anchor. Eight regional charters
-provide local treasuries, adult business dues, titles and resident recognition.
-All eight grant High Steward of Hyrule. The castle estate is not yet in this build.
+Build.ps1 -Action Stage and the external Verify-KingdomInstall.ps1 completed.
+All three executable copies and both installed port archives match the build.
+Eight feature/revision markers were found in the actual executable. Both
+settings files and all four saves were verified unchanged. Never use Build.ps1
+Run or All unless the owner explicitly asks to start the game.
 
-The existing bank, cottage, sixteen deeds and optional combat challenge remain.
-Save schema4 migrates1/2/3 and captures social state, wardrobe and stewardship in
-the copied SaveContext. Malformed/future sections are preserved read-only.
+- Executable size: 106,360,320 bytes.
+- Executable SHA256:
+  6d313f623efe8272c771a8dc1892a1b96ddf4d5c6e3a1d9324cf93376ab6f027.
+- Port archive SHA256:
+  b2618289f65599259c2451c22f5495e46b769529b91299c206c284ee8e843eb6.
+- Receipts: C:\ZeldaDev\docs\LATEST-BUILD.json and
+  C:\ZeldaDev\docs\BUILD-KINGDOM-RECOVERY-e575c93.json.
+- Alternate executable: C:\ZeldaDev\runtime\living-hyrule-playtest\soh.exe.
 
-## Preservation
+Desktop shortcut Living Hyrule (Modded) points to
+C:\ZeldaDev\runtime\development\soh.exe with the matching working directory.
+Additional residents and the optional challenge are enabled in that profile.
+User settings, including Infinite Health, are preserved. Vanilla and ROM remain
+separate and untouched. No game process has been started.
 
-Backup:C:\ZeldaDev\backups\before-relationships-20260915-0735UTC.
-Compiled executable and port archive hashes match both runtime copies. Exact
-hash checks confirmed both settings files and all four existing save files are
-unchanged. No save/profile edits or game launches occurred in this installation.
-Prior build002be29 remains in the backup. Vanilla and ROM paths were untouched.
+Logs: C:\ZeldaDev\logs\overnight-kingdom-recovery-{tests,configure,build,stage}-final.log.
+Owner guide: C:\ZeldaDev\docs\PLAY-LIVING-HYRULE.md.
 
-## Active next increment (not installed)
+## Remaining scope
 
-- C:\ZeldaDev\worktrees\zora-restoration:5ee757b2515edfe5871d68d2de325625e83efbce,
-  new ZoraRestoration module, pure/native geometry tests and narrow native water
-  hooks. Requires root HasFundedZoraRestoration bridge/payment/schema5/CMake.
-  Ordinary Domain water restoration preserves red ice, King Zora, Skulltula and
-  closes the underwater Lake shortcut. Cross-review in progress.
-- C:\ZeldaDev\worktrees\royal-estate:royal garden travel, safe adult scene
-  preparation, original quest-actor exclusion, private return exit and household
-  placement. Agent finishing tests/commit/cross-review. Root owns final dialogue,
-  purchase and UI integration. No new castle rooms are implied.
-- C:\ZeldaDev\worktrees\social-expansion:root work in progress. Schema5 adds
-  Domain funding, castle ownership, three finite gifts for each resident and
-  eight royal acknowledgments. Strict codec/Economy/Social tests3/3 and new
-  LifeProgression tests passed. Runtime dialogue/payment/journal wiring underway;
-  RoyalAudience updates must wait for estate agent's placement commit.
-- C:\ZeldaDev\worktrees\regional-encounters:independent bounded native encounter
-  module, verified outdoor pockets only, optional challenge gate, no original
-  actor replacement, no save field or automatic game launch. In progress.
+This is a testable development milestone, not the whole finished vision. Full
+castle/shop interiors, wider contextual population and properties, more daily
+routines, equipment models and deeper combat remain. The 110-scene population
+plan distinguishes the implemented cast from future locations.
 
-Coordinate shared files; never change the main save ABI during a full build.
-The wider vision still needs more interiors, properties, regional population
-and routines, equipment variants and encounter depth. Do not claim whole-game
-completion or gameplay acceptance. Read C:\ZeldaDev\docs\LIVING-HYRULE-VISION.md.
-
-## Build discipline
-
-Use tools/living-hyrule/Build.ps1 Configure/Build/Stage and Test.ps1; never Run.
-Commit code before Configure for accurate embedded revision. No overlapping
-main builds. Independent native checks use external build folders. Keep the
-last successful runtime on failure, back up before replacement and compare
-hashes/settings/saves afterward. Use clang-format14, not the bundled19.
-
-Source-only commits/pushes may include code/docs/tests, never ROMs, O2R/OTR,
-extracted Nintendo data, personal profiles/saves, executable/PDB/build outputs.
-The original setup remains in Git history and external milestone receipts.
+An account-usage interruption stopped work during part of the overnight period.
+Work resumed after the owner's continue message, integrated the current stage,
+and froze scope when they asked to test. Do not report uninterrupted overnight
+implementation or gameplay verification.

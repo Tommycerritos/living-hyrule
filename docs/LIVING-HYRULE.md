@@ -6,18 +6,20 @@ Living Hyrule extends a normal Ocarina of Time or Master Quest adventure while
 preserving the main quest. Randomizer and Boss Rush are outside this increment's
 supported scope. The [worklog](LIVING-HYRULE-WORKLOG.md) identifies the last
 successfully installed build; the [changelog](LIVING-HYRULE-CHANGELOG.md) records
-individual stages. The combined schema-four source has passed **17 of 17 native
-and local-resource test suites**. The full game configured, compiled, linked and
-installed successfully as **46c17fa** at 08:09 UTC on September 15. Both modded
-runtime executables match the build; their settings and saves are unchanged.
-No game was started, and automated checks do not establish gameplay acceptance.
+individual stages. The installed schema-five build **e575c93** (source
+**e575c936c**) passed all **25 native and local-resource suites**, full compilation
+and installation verification. Both modded runtimes match the compiled files;
+both settings files and all four saves are unchanged. Development is paused for
+the owner's test. No game was started; automated checks do not establish gameplay
+acceptance.
 
 ### People and direct trade
 
 Twenty-three identities use independent custom actor behavior. Three live in
 Kakariko; nine cover the Market, Hyrule Field, ranch and lake; four use native
 Kokiri/Goron models; four use native Zora/Gerudo models; Zelda, Captain Aren and
-Maelin receive postgame visitors on the castle approach. See the
+Maelin receive postgame visitors on the castle approach and in the royal garden.
+Lethra and Neris also have daytime stops in the actively restored Domain. See the
 [population document](LIVING-HYRULE-POPULATION.md) for exact placement and gates.
 Compatible skeletons, heads, idles and material segments are reused locally;
 original quest actors and shared resource data are not modified.
@@ -69,7 +71,17 @@ terms are distinct, preventing a last-moment switch from changing a due payment.
 The royal audience appears only after the saved Ganon-defeat timestamp: all three
 by day, Aren overnight. Independent actors reuse compatible native skeletons and
 rendering helpers, never the original Zelda escape, guard or quest state machines.
-They stand on verified dry ground below the ruined castle, not in a rebuilt interior.
+Their garden and approach placements use independently checked native ground;
+neither site adds finished castle rooms.
+
+Each of the 23 residents accepts three finite gift kinds through an owned
+conversation: regional provisions (60 bank rupees), work supplies (180), and a
+handmade keepsake (350). Each kind can be given to each person once. A preferred
+gift earns 8 trust and another gift earns 4; repeat gifts are rejected. Zelda
+also recognizes eight finite deeds, each worth 5 trust once: the five adult
+temple recoveries, Market restoration, Domain water restoration and all eight
+regional charters. Recognition occurs in her actual conversation, never from
+repeated journal checks or ordinary greetings.
 
 ### Banking, property and recovery
 
@@ -106,6 +118,46 @@ Shop fronts remain closed, alley barriers remain, and no new interiors or
 castle restoration are included. Resource/background compatibility and entrance
 checks can withhold the work; payment is refused if it cannot be prepared safely.
 Funding is per save and requires a normal save to persist.
+
+The separate **18,000-rupee Domain restoration** requires the Water Medallion
+and the original Water Temple blue-warp completion flag. Fund it through Lethra
+or the recovery controls. On the next eligible adult Domain entry, native
+ordinary ice becomes flowing pools and waterfalls. Collision and drawing are
+selected together before the scene is initialized and remain fixed for that
+visit if the economy setting changes. Missing or incompatible resources leave
+the native frozen Domain in place and preserve the investment.
+
+King Zora, his Blue Fire treatment, the shop's red ice, adult Skulltula and
+original quest actors remain intact. The underwater Lake shortcut stays sealed,
+with matching visible and physical blocking. Lethra and Neris appear by day on
+dry room-one walkways only while the actual restoration is active and the
+economy is enabled; their River stops remain available under existing schedules.
+
+### Royal garden and castle estate
+
+After recorded Ganon victory and Market restoration funding, adult Link can
+ask Aren or use the ledger to visit the native royal garden from the castle
+approach or actively restored Market. Visits are free and require no estate
+deed. The garden uses an ordinary adult entrance without changing Link's age,
+the original ending, or canonical quest flags. Original courtyard story actors
+are suppressed only in this adult visit; child and ending setups retain them.
+
+Zelda and Maelin receive visitors by day; Aren keeps watch at night. Native
+garden time remains paused. The east doorway, Aren's return topic and the ledger
+return control lead back to the adult castle approach. Travel chosen in dialogue
+waits for that conversation to end and rechecks safe play. The return route
+persists if the economy or residents are disabled. A remembered garden visit
+with unprepared resources keeps an empty escape route while withholding the
+household and purchase; it does not load the original story actors.
+
+The **castle estate deed costs 500,000 bank rupees** and requires recorded Ganon
+victory, funded Market restoration, all eight regional charters and an actively
+prepared garden. Purchase through Maelin or the garden's ledger controls.
+Zelda's trust at **50** lowers the price by ten percent to **450,000**. Ownership
+adds permanent standing and household recognition. Zelda and her staff remain
+at home; the deed grants no finished castle rooms and evicts nobody.
+
+### Property supplies
 
 Property supplies are independent, non-colliding decorative actors anchored to
 seven WorldResidents managers. An owned adult business awaiting repairs shows
@@ -185,7 +237,22 @@ Every second eligible temporary, unflagged loose heart is removed before its
 first eligible update. Emergency drops at one heart or less are kept. Placed
 hearts, direct item awards, heart pieces, containers and fairies are excluded.
 The filter consumes no random numbers and clears identity tracking on scene exit.
-This is the first combat increment, not a claim of redesigned enemy intelligence.
+The same preference enables three small encounters using native enemy behavior:
+
+| Place | Added enemy | Story and time requirement |
+| --- | --- | --- |
+| Death Mountain Trail | One red Tektite on an upper overlook | Adult, Fire Medallion, night |
+| Zora's River | One blue Tektite in a water pocket | Child, Zora's Sapphire, night |
+| Desert Colossus | One small Leever away from the temple approach | Adult, Spirit Medallion, Gerudo membership, day |
+
+Hyrule Field has no added encounter. Each scene entry permits at most one
+attempt, after arrival and only while the player is nearby. Unsafe ground,
+nearby actors, unavailable native resources or conflicting enemy/asset/network
+settings skip it. The Colossus also requires a rare quiet interval long enough
+in the original Leever spawner; no extra Leever is guaranteed on a visit.
+Added enemies have short lifetimes and bounded areas. Native encounters, quest
+flags and room-clear rewards remain separate. No new enemy intelligence or
+dungeon encounters are included.
 
 ## Persistence
 
@@ -196,28 +263,31 @@ LivingHyruleSaveData, inline at SaveContext.ship.livingHyrule, is a fixed-size
 plain C structure. It holds the enable flag, bank, cottage, rent ticks/earnings,
 property/repair masks, sixteen business timers and business earnings, plus 23
 signed trust values, meeting/favor masks, one active delivery, locked/requested
-rent terms and Market restoration funding. Nested wardrobe data holds eight
-ownership bits and one equipped style; nested stewardship data holds eight
-charter bits and eight treasury balances. It has no
+rent terms, Market and Domain restoration funding, castle-estate ownership,
+23 per-person gift masks and the eight-deed royal recognition mask.
+Nested wardrobe data holds eight ownership bits and one equipped style; nested
+stewardship data holds eight charter bits and eight treasury balances. It has no
 pointers or dynamic containers and is safe for the engine's copied save snapshot.
 The background save callback reads that snapshot, capturing wallet and ledger
 from the same moment. Global preferences are separate from per-save money.
 
 The optional named section is livingHyrule, outer version **1**. Its
-data.economy payload uses inner **schemaVersion 4**. Schemas one, two and three
-migrate by preserving every field supported by their version, including existing
-social progress, rent terms and restoration funding. New modules start with no
-owned dyes, original clothing, no charters and empty treasuries. Earlier social
-migrations retain neutral trust and fair rent. The outer section remains version 1.
+data.economy payload uses inner **schemaVersion 5**. Schemas **1 through 4**
+migrate while preserving their existing money, property, timers, relationships,
+rent terms, restoration funding, dyes, charters and treasuries. New schema-five
+fields begin with no Domain investment, estate deed, gifts or royal recognition.
+Earlier migrations retain their neutral trust, fair rent and empty module
+defaults. The outer section remains version 1.
 New saves without the section start with an empty, disabled economy.
 
 The codec validates booleans, integer types/ranges, balances, ownership masks,
-repair subsets and timer invariants before assigning live state. Schema four
-requires wardrobe/stewardship objects, exactly eight treasury entries, a valid
-owned equipped style and a charter for every nonempty treasury. Unknown optional
-keys within a supported schema are accepted. Future versions or
-malformed payloads/envelopes make the ledger read-only. The opt-in SaveManager
-fallback and snapshot save condition preserve the original section when the
+repair subsets and timer invariants before assigning live state. Current saves
+require wardrobe/stewardship objects, exactly eight treasury entries, a valid
+owned equipped style and a charter for every nonempty treasury. Schema five
+also validates restoration/estate booleans, exactly 23 gift masks and the finite
+recognition mask. Unknown optional keys within a supported schema are accepted.
+Future versions or malformed payloads/envelopes make the ledger read-only.
+The opt-in SaveManager fallback and snapshot save condition preserve the original section when the
 rest of the game saves. Unrelated sections retain upstream behavior; file-wide
 JSON corruption still belongs to upstream recovery.
 
@@ -267,11 +337,11 @@ a source-only workflow is deliberately designed.
 
 ## Still in development
 
-Full building reconstruction beyond the Market exterior and new interiors;
-broader property coverage and balanced expenses; gifts and deeper relationships;
-wider walking/work/home routines, staffing and population growth; castle
-ownership, restoration and daily life; new regional equipment models and more
-deliberate combat and encounter behavior. The full
+Full castle rooms, new shop interiors and broader building reconstruction;
+broader property coverage and balanced expenses; deeper relationships and royal
+daily life; wider walking/work/home routines, staffing and population growth;
+new regional equipment models and deeper combat. Three bounded regional
+encounters are installed; broader encounter variety remains unfinished. The full
 [creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md) remains the direction.
 The [population plan](LIVING-HYRULE-POPULATION.md) evaluates all 110 scene IDs,
 including places that should retain solitude, puzzle space or quest atmosphere.
