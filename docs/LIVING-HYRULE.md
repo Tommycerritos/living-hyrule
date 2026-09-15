@@ -15,6 +15,22 @@ systems are future work. The creative direction is preserved in the
 [local creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md); the earlier
 [reference design](C:/ZeldaDev/docs/LIVING-HYRULE-REFERENCE.md) is also retained.
 
+The subsequent `feature/living-hyrule-residents` branch adds Tavin, Bram, and Orlen
+as independent Kakariko actors with existing carpenter visuals, individual head
+variants, clothing tints, proportions, and idle posture. They have original
+conversations that recognize age, the Shadow Medallion, and cottage ownership.
+The [population plan](LIVING-HYRULE-POPULATION.md) covers all 110 scene IDs;
+worldwide deployment remains planned.
+
+The **Additional residents** checkbox is a global preference, default off and
+independent of economy state. They appear outdoors by day in normal adventures
+and Master Quest: three during childhood, Bram during the adult crisis, three
+after the Shadow Medallion. They do not appear in cutscene layers. The scheduler
+validates floor and body clearance and checks nearby actors before placing them;
+blocked candidate positions are retried later. No existing actor is moved.
+Placement is provisional until gameplay acceptance. There are no night-time
+indoor schedules in this increment, and NPC conversations do not transact money.
+
 ## Using the first prototype
 
 Use a disposable development save in a normal adventure or Master Quest. Open
@@ -26,8 +42,8 @@ the supported prototype scope.
 The ledger shows the wallet, bank balance, cottage ownership, time to the next
 rent payment, and total rent earned. Banking is available throughout Hyrule;
 buying the cottage requires being in Kakariko Village. This is a ledger purchase
-representing ownership, with no physical seller, NPC dialogue changes, new
-interior, or alteration to an existing building yet.
+representing ownership. Tavin can discuss the listing, but purchases still use
+the ledger. There is no new interior or alteration to an existing building yet.
 
 | Rule | Prototype behavior |
 | --- | --- |
@@ -102,14 +118,15 @@ finds the new module without a manual source list.
 
 ## Verification and user acceptance
 
-Native economy-model and save-codec tests passed. Full-game compilation and linking
-also succeeded. The build was staged at `C:\ZeldaDev\runtime\development`, and
-the staged executable's SHA-256 matches the compiler output.
+Native economy-model, save-codec, and population-policy tests passed (three suites).
+The population suite covers 224 combinations of enable, adventure, location,
+scene, daytime, and story-phase conditions. Full-game compilation and linking
+succeeded for the combined economy and resident implementation.
 
 The project owner will perform gameplay acceptance. No runtime playtest of the
 new mod is claimed, and further agent playtesting is not part of this handoff.
-The ledger controls, normal save/reload, save-slot separation, Child/Adult Link
-recovery behavior, and original quest progression remain for the owner's
+The ledger controls, normal save/reload, save-slot separation, NPC placement,
+appearance and dialogue, Child/Adult Link recovery behavior, and original quest progression remain for the owner's
 playthrough. Use a disposable development save when trying the increment. The
 successful automated checks and build establish implementation readiness without
 claiming those gameplay paths have been exercised in the running game.
@@ -121,6 +138,7 @@ claiming those gameplay paths have been exercised in the running game.
 - `develop`: untouched official baseline, tracking `upstream/develop`.
 - `living-hyrule`: integration branch for reviewed project changes.
 - `feature/living-hyrule-economy`: current bank and first cottage prototype.
+- `feature/living-hyrule-residents`: three new residents, including the economy branch.
 - `feature/<topic>`: one bounded feature per branch and pull request into `living-hyrule`.
 - `fix/<topic>` and `docs/<topic>`: focused fixes and documentation.
 - `baseline/shipwright-2026-09-14`: pinned original source commit for comparison.

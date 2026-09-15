@@ -18,8 +18,8 @@
 
 namespace LivingHyrule {
 
-// This first prototype buys the cottage through a ledger. It does not add a
-// physical seller NPC, change an existing NPC's dialogue, or add a cottage interior.
+// Cottage purchases use this ledger. The additional residents discuss the
+// property, while their talk interactions do not yet perform transactions.
 class LivingHyruleWindow final : public Ship::GuiWindow {
   public:
     using GuiWindow::GuiWindow;

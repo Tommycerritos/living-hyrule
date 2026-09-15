@@ -1,5 +1,27 @@
 # Living Hyrule changelog
 
+## 2026-09-14 — First additional residents
+
+- Added Tavin the carpenter, Bram the boot-mender, and Orlen the supplier in
+  Kakariko, controlled by an independent **Additional residents** option.
+- Reused the existing carpenter skeleton with per-character head choices,
+  clothing tints, proportions, and idle poses. New actor behavior owns its
+  dialogue and does not run the original carpenters' quest logic.
+- Added daytime schedules: all three in childhood, Bram during the adult
+  crisis, and all three again after the Shadow Medallion.
+- Added conversations that react to age, recovery, and cottage ownership.
+- Added floor, body-clearance, nearby-actor, and duplicate-resident checks before
+  placing residents. Schedule changes allow an active conversation to finish.
+- Passed the native population policy suite, covering 224 combinations of
+  location, story, time, and enable conditions.
+- Compiled and linked the full Windows game with the economy and residents.
+- Documented contextual population plans for all 110 scene IDs. Other regions,
+  indoor schedules, and additional model families remain planned.
+
+Gameplay placement, appearance, and dialogue acceptance are left to the owner.
+The residents introduce people behind the economy; property purchases continue
+through the ledger in this increment.
+
 ## 2026-09-14 — First economy increment
 
 - Added an optional bank account for each normal or Master Quest save file.

@@ -6,6 +6,7 @@
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/ResourceManagerHelpers.h"
+#include "soh/frame_interpolation.h"
 
 #include <cmath>
 #include <string>
@@ -242,7 +243,7 @@ s32 OverrideLimb(PlayState*, s32 limbIndex, Gfx**, Vec3f*, Vec3s* rotation, void
     return false;
 }
 
-void PostLimb(PlayState* play, s32 limbIndex, Gfx**, Vec3s*, void* actorRef) {
+extern "C" void PostLimb(PlayState* play, s32 limbIndex, Gfx**, Vec3s*, void* actorRef) {
     if (limbIndex != 15) {
         return;
     }
@@ -251,11 +252,13 @@ void PostLimb(PlayState* play, s32 limbIndex, Gfx**, Vec3s*, void* actorRef) {
     Vec3f focus = { 700.0f, 1100.0f, 0.0f };
     Matrix_MultVec3f(&focus, &resident->actor.focus.pos);
     OPEN_DISPS(play->state.gfxCtx);
-    gSPDisplayList(POLY_OPA_DISP++, appearance.headDisplayList);
+    // Ship's graphics bridge accepts an __OTR__ resource name through the same
+    // pointer parameter as a native display list; it does not modify the name.
+    gSPDisplayList(POLY_OPA_DISP++, reinterpret_cast<Gfx*>(const_cast<char*>(appearance.headDisplayList)));
     CLOSE_DISPS(play->state.gfxCtx);
 }
 
-void DrawResident(Actor* actor, PlayState* play) {
+extern "C" void DrawResident(Actor* actor, PlayState* play) {
     auto* resident = reinterpret_cast<ResidentActor*>(actor);
     if (!resident->initialized || !HasValidRole(actor)) {
         return;
