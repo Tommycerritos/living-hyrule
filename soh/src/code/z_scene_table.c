@@ -1211,7 +1211,7 @@ void func_8009E730(PlayState* play) {
 
     gameplayFrames = play->gameplayFrames;
     var = 127 - (gameplayFrames * 1) % 128;
-    if (LINK_IS_ADULT) {
+    if (GameInteractor_Should(VB_ZORAS_DOMAIN_FROZEN, LINK_IS_ADULT, play, (Actor*)NULL)) {
         var = 0;
     }
     gSPSegment(POLY_OPA_DISP++, 0x0C,

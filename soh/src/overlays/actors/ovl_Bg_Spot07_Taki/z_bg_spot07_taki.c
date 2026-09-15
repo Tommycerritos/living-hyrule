@@ -6,6 +6,7 @@
 
 #include "z_bg_spot07_taki.h"
 #include "objects/object_spot07_object/object_spot07_object.h"
+#include "soh/Enhancements/game-interactor/GameInteractor_Hooks.h"
 
 #define FLAGS (ACTOR_FLAG_UPDATE_CULLING_DISABLED | ACTOR_FLAG_DRAW_CULLING_DISABLED)
 
@@ -40,7 +41,7 @@ void BgSpot07Taki_Init(Actor* thisx, PlayState* play) {
 
     DynaPolyActor_Init(&this->dyna, DPM_PLAYER);
     Actor_ProcessInitChain(&this->dyna.actor, sInitChain);
-    if (LINK_IS_ADULT) {
+    if (GameInteractor_Should(VB_ZORAS_DOMAIN_FROZEN, LINK_IS_ADULT, play, thisx)) {
         if (this->dyna.actor.params == 0) {
             CollisionHeader_GetVirtual(&object_spot07_object_Col_002590, &colHeader);
         } else {
@@ -69,10 +70,11 @@ void BgSpot07Taki_Update(Actor* thisx, PlayState* play) {
 void BgSpot07Taki_Draw(Actor* thisx, PlayState* play) {
     BgSpot07Taki* this = (BgSpot07Taki*)thisx;
     u32 frames;
+    s32 frozen = GameInteractor_Should(VB_ZORAS_DOMAIN_FROZEN, LINK_IS_ADULT, play, thisx);
 
     OPEN_DISPS(play->state.gfxCtx);
     frames = play->gameplayFrames;
-    if (LINK_IS_ADULT) {
+    if (frozen) {
         Gfx_SetupDL_25Opa(play->state.gfxCtx);
         gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
         if (this->dyna.actor.params == 0) {
@@ -89,7 +91,7 @@ void BgSpot07Taki_Draw(Actor* thisx, PlayState* play) {
                Gfx_TwoTexScrollEx(play->state.gfxCtx, 0, ((frames * -1) & 0x7F), ((frames * 1) & 0x7F), 32, 32, 1,
                                   ((frames * 1) & 0x7F), ((frames * 1) & 0x7F), 32, 32, -1, 1, 1, 1));
 
-    if (!LINK_IS_ADULT) {
+    if (!frozen) {
         gDPSetEnvColor(POLY_XLU_DISP++, 255, 255, 255, 128);
         if (this->dyna.actor.params == 0) {
             gSPSegment(POLY_XLU_DISP++, 0x09,

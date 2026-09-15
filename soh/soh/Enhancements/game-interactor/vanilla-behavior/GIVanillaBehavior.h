@@ -3967,4 +3967,15 @@ typedef enum {
     // #### `args`
     // - `*Player`
     VB_PLAYER_UNEQUIP_MASK_WITHOUT_BUTTON,
+
+    // #### `result`
+    // ```c
+    // LINK_IS_ADULT
+    // ```
+    // Whether the Domain's decorative water uses frozen collision/drawing and
+    // static water texture scrolling. Does not apply to red ice or King Zora.
+    // #### `args`
+    // - `*PlayState`
+    // - `*Actor` BgSpot07Taki, or NULL for the scene water animation
+    VB_ZORAS_DOMAIN_FROZEN,
 } GIVanillaBehavior;
