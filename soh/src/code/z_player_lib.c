@@ -1036,6 +1036,8 @@ Gfx* sBootDListGroups[][2] = {
     { gLinkAdultLeftHoverBootDL, gLinkAdultRightHoverBootDL }, // PLAYER_BOOTS_HOVER
 };
 
+s32 Player_OverrideLimbDrawPause(PlayState* play, s32 limbIndex, Gfx** dList, Vec3f* pos, Vec3s* rot, void* arg);
+
 void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dListCount, s32 lod, s32 tunic, s32 boots,
                      s32 face, OverrideLimbDrawOpa overrideLimbDraw, PostLimbDrawOpa postLimbDraw, void* data) {
     Color_RGB8* color;
@@ -1082,8 +1084,14 @@ void Player_DrawImpl(PlayState* play, void** skeleton, Vec3s* jointTable, s32 dL
         color = &sTemp;
     }
 
-    if (GameInteractor_Should(VB_APPLY_TUNIC_COLOR, true, data, color)) {
-        gDPSetEnvColor(POLY_OPA_DISP++, color->r, color->g, color->b, 0);
+    // Hooks may customize only this draw. The selected pointer can address the
+    // shared vanilla palette, so expose a stack copy instead. Keep the original
+    // two hook arguments and append context for the equipment preview, whose
+    // data pointer is not a Player. Existing hook consumers remain compatible.
+    Color_RGB8 drawColor = *color;
+    if (GameInteractor_Should(VB_APPLY_TUNIC_COLOR, true, data, &drawColor, play, tunic,
+                              (s32)(overrideLimbDraw == Player_OverrideLimbDrawPause))) {
+        gDPSetEnvColor(POLY_OPA_DISP++, drawColor.r, drawColor.g, drawColor.b, 0);
     }
 
     // If we have a custom link model, always use the most detailed LOD
