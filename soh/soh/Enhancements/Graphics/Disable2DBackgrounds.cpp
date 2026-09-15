@@ -1,6 +1,7 @@
 #include <libultraship/bridge/consolevariablebridge.h>
 
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
+#include "soh/Enhancements/living-hyrule/MarketRestoration.h"
 #include "soh/ShipInit.hpp"
 #include "soh/resource/type/scenecommand/SetTimeSettings.h"
 
@@ -81,6 +82,11 @@ void Register3DPreRenderedScenes() {
     // skybox. Overriding the id here means Skybox_Setup loads a real sky; overriding it any later would
     // leave the display lists pointing at the pre-rendered skybox's texture slots.
     COND_HOOK(AfterSceneCommands, CVAR_VALUE, [](int16_t sceneNum) {
+        // Restoration latches compatible collision and panorama for this visit.
+        // Apply a changed 3D preference on the next scene entry.
+        if (LivingHyrule::IsMarketRestorationActive()) {
+            return;
+        }
         if (!skyboxSceneControlList.contains(static_cast<SceneID>(sceneNum)) &&
             !skyboxIdControlList.contains(static_cast<SkyboxId>(gPlayState->skyboxId))) {
             return;
@@ -101,6 +107,9 @@ void Register3DPreRenderedScenes() {
     });
 
     COND_HOOK(OnPlayDrawBegin, CVAR_VALUE, []() {
+        if (LivingHyrule::IsMarketRestorationActive()) {
+            return;
+        }
         if (!fogControlList.contains(static_cast<SceneID>(gPlayState->sceneNum))) {
             return;
         }
@@ -113,7 +122,11 @@ void Register3DPreRenderedScenes() {
         }
     });
 
-    COND_VB_SHOULD(VB_DRAW_2D_BACKGROUND, CVAR_VALUE, { *should = false; });
+    COND_VB_SHOULD(VB_DRAW_2D_BACKGROUND, CVAR_VALUE, {
+        if (!LivingHyrule::IsMarketRestorationActive()) {
+            *should = false;
+        }
+    });
 }
 
 static RegisterShipInitFunc initFunc(Register3DPreRenderedScenes, { CVAR_NAME });

@@ -1,5 +1,9 @@
 #include "GameInteractor_Hooks.h"
 
+extern "C" {
+#include "z64.h"
+}
+
 // MARK: - Gameplay
 
 void GameInteractor_ExecuteOnZTitleInit(void* gameState) {
@@ -64,6 +68,12 @@ void GameInteractor_ExecuteAfterSceneCommands(int16_t sceneNum) {
     GameInteractor::Instance->ExecuteHooks<GameInteractor::AfterSceneCommands>(sceneNum);
     GameInteractor::Instance->ExecuteHooksForID<GameInteractor::AfterSceneCommands>(sceneNum, sceneNum);
     GameInteractor::Instance->ExecuteHooksForFilter<GameInteractor::AfterSceneCommands>(sceneNum);
+}
+
+void GameInteractor_ExecuteOnSceneCollisionLoad(PlayState* play, CollisionHeader** header) {
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnSceneCollisionLoad>(play, header);
+    GameInteractor::Instance->ExecuteHooksForID<GameInteractor::OnSceneCollisionLoad>(play->sceneNum, play, header);
+    GameInteractor::Instance->ExecuteHooksForFilter<GameInteractor::OnSceneCollisionLoad>(play, header);
 }
 
 void GameInteractor_ExecuteOnSceneFlagSet(int16_t sceneNum, int16_t flagType, int16_t flag) {

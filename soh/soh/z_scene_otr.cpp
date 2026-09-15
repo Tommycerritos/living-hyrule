@@ -75,7 +75,10 @@ bool Scene_CommandUnused2(PlayState* play, SOH::ISceneCommand* cmd) {
 bool Scene_CommandCollisionHeader(PlayState* play, SOH::ISceneCommand* cmd) {
     // SOH::SetCollisionHeader* cmdCol = std::static_pointer_cast<SOH::SetCollisionHeader>(cmd);
     SOH::SetCollisionHeader* cmdCol = (SOH::SetCollisionHeader*)cmd;
-    BgCheck_Allocate(&play->colCtx, play, (CollisionHeader*)cmdCol->GetRawPointer());
+    CollisionHeader* original = (CollisionHeader*)cmdCol->GetRawPointer();
+    CollisionHeader* selected = original;
+    GameInteractor_ExecuteOnSceneCollisionLoad(play, &selected);
+    BgCheck_Allocate(&play->colCtx, play, selected != nullptr ? selected : original);
 
     return false;
 }
