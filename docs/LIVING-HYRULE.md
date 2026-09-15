@@ -6,8 +6,8 @@ Living Hyrule extends a normal Ocarina of Time or Master Quest adventure while
 preserving the main quest. Randomizer and Boss Rush are outside this increment's
 supported scope. The [worklog](LIVING-HYRULE-WORKLOG.md) identifies the last
 successfully installed build; the [changelog](LIVING-HYRULE-CHANGELOG.md) records
-individual stages. The installed schema-five build **e575c93** (source
-**e575c936c**) passed all **25 native and local-resource suites**, full compilation
+individual stages. The installed graphics compatibility build **6d91da1** (source
+**6d91da1b4**, still schema five) passed all **25 native and local-resource suites**, full compilation
 and installation verification. Both modded runtimes match the compiled files;
 both settings files and all four saves are unchanged. Development is paused for
 the owner's test. No game was started; automated checks do not establish gameplay

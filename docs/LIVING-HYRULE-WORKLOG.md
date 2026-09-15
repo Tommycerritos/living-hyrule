@@ -2,89 +2,76 @@
 
 ## Current request and frozen scope
 
-The owner asked to stop further development, finish a stable checkpoint, install
-its mods into the game and let them test. Do not launch the game. The overnight
-heartbeat living-hyrule-overnight-development is PAUSED. Do not resume automatic
-development while the owner tests unless they ask.
+The owner explicitly requested the graphics compatibility follow-up after asking
+about 60 FPS and HD packs. That fix is now implemented, built and installed. The
+game was not started. Automatic overnight development remains PAUSED; the owner
+tests the installed milestone. No texture pack, FPS or resolution change was made.
 
-Installed source: e575c936c2240635421293d6923b3adcac2d6a9d from
-feature/living-hyrule-kingdom-recovery; embedded revision e575c93.
-All 25 native/local-resource suites, full configure/compile/link, Stage and
-installation verification passed. Installed UTC: 2026-09-15T14:18:56Z.
+Installed source: 6d91da1b4874179b6e8748b234531452e852334a from
+feature/living-hyrule-graphics-compatibility; embedded revision 6d91da1.
+All 25 native/local-resource suites, strict compiler checks, full configure/build,
+Stage and installation verification passed. Installed UTC: 2026-09-15T18:11:15.9650120+00:00.
 C:\ZeldaDev\docs\LATEST-BUILD.json is the installed-build authority.
 
-## Implemented in the installed build
+## Changes in this follow-up
 
-- Funded adult Zora Domain water restoration, preserving King Zora, red ice,
-  Skulltula, required progression and a closed underwater Lake shortcut.
-  Lethra and Neris also occupy verified restored-Domain walkways by day.
-- Safe postgame royal garden visits through Captain Aren, a persistent return
-  route and the household's garden placements. Maelin sells the estate deed
-  after all eight charters; Zelda's trust can discount it. Full castle rooms
-  remain unfinished.
-- Three finite gifts per resident, saved gift memories, context-sensitive royal
-  conversations and eight once-only acknowledgments of completed deeds.
-- Three bounded optional native outdoor encounters on the Trail, River and
-  Colossus; original enemy room-clear bookkeeping remains unchanged. The
-  Colossus addition requires a rare original-spawner rest window. No Field or
-  dungeon additions.
-- Save schema five validates new state and migrates supported schemas one
-  through four. Unknown/future/malformed state remains preserved read-only.
-- All prior bank/cottage/business/resident/favor/Market/dye/charter systems.
+- Texture-only packs and the alternate-assets preference no longer suppress the
+  three added encounters. Checks target each enemy's actual native rig, limbs,
+  all its animations and the scene collision. Binary replacements and metadata
+  aliases are checked too; unrelated Link models are allowed.
+- Rig shape and cached limb pointers must remain compatible. Added enemies keep
+  their native rig fixed for their lifetime, and compatibility is checked again
+  on asset toggles. Existing native death/breakup finishes; toggles never reset
+  the once-per-entry budget. Structural enemy/scene overhauls remain excluded.
+- Regional dyes use the tunic-color channel with custom Link models. Fixed-color
+  textures may ignore the tint. Explicit cosmetic colors and connected Anchor
+  appearances still take priority. The wardrobe explains this in the game.
+- Save schema stays five. All previous recovery, royal garden/estate, gifts,
+  bank/cottage/business/resident/favor/Market/dye/charter features remain included.
 
-## Verification and integration
+## Verification
 
-Final Test.ps1: 25/25 passed, including five read-only local native-archive suites.
-Nine integrated engine translation units passed strict /W3 /WX syntax; the
-encounter module and its ChallengeMode integration passed separate strict checks.
-Peer reviews fixed pre-player Domain funding detection, delayed travel safety,
-remembered-garden fallback handling and a parentless Leever repeat-drop defect.
-Royal text buffer bounds were checked. These are source/compiler/resource
-checks; gameplay and visual acceptance still belong to the owner.
+Test.ps1 passed 25/25 suites, including the five local native-archive suites.
+New cases cover texture packs, unrelated Link models, missing/overridden
+structural assets, metadata aliases, toggles without extra spawns, custom-model
+dyes and cosmetic/network precedence. Native archive checks verify the entire
+animation manifest and embedded rig sizes. RegionalEncounters, RegionalWardrobe
+and LivingHyruleWindow passed strict MSVC /W3 /WX syntax checks; the final UI text
+also compiled in the full successful build.
 
-The new commits contain only source/tests. Source-only history audit found no
-ROM, media, game archive, binary, personal settings or save additions. Hooks and
-ignore rules remain enabled; upstream push stays disabled.
+No third-party texture/model pack was installed or visually tested. Automated
+checks and a successful build do not establish gameplay or visual acceptance.
+The owner's latest saves/settings were fingerprinted immediately before this
+installation; preservation checks use that fresh baseline, not an older build.
 
 ## Installed artifact and preservation
 
-Backup: C:\ZeldaDev\backups\before-kingdom-recovery-20260915-134929UTC.
-It contains both previous executables/port archives/settings, the previous receipt
-and all four existing save fingerprints. The prior 46c17fa executable SHA256 is
-70838903feb8826cd8195c03970a262d2bfaea9a66f930710d1c655316b7fcd0.
+Backup: C:\ZeldaDev\backups\before-graphics-compatibility-20260915-175139UTC.
+It contains both prior executables, port archives, settings, imgui preferences,
+save copies, the prior receipt and preservation fingerprints. All 13 protected
+files match afterward: four saves, both settings/ImGui files, both local game
+archives, the ROM, and vanilla executable/port archive.
 
-Build.ps1 -Action Stage and the external Verify-KingdomInstall.ps1 completed.
-All three executable copies and both installed port archives match the build.
-Eight feature/revision markers were found in the actual executable. Both
-settings files and all four saves were verified unchanged. Never use Build.ps1
-Run or All unless the owner explicitly asks to start the game.
+Both modded executables and port archives match the compiled artifacts. Nine
+revision/feature strings were verified in the executable. No game was launched.
 
-- Executable size: 106,360,320 bytes.
-- Executable SHA256:
-  6d313f623efe8272c771a8dc1892a1b96ddf4d5c6e3a1d9324cf93376ab6f027.
-- Port archive SHA256:
-  b2618289f65599259c2451c22f5495e46b769529b91299c206c284ee8e843eb6.
-- Receipts: C:\ZeldaDev\docs\LATEST-BUILD.json and
-  C:\ZeldaDev\docs\BUILD-KINGDOM-RECOVERY-e575c93.json.
-- Alternate executable: C:\ZeldaDev\runtime\living-hyrule-playtest\soh.exe.
+- Executable size: 106,370,048 bytes.
+- Executable SHA256: eeab46b36609e1faae73071062dc2f86f1d4c2dabd9be965606af258e272fe47.
+- Port archive SHA256: 3717e816c431e7af3689ca52d1e6078e0d8d67d844aeb32c3780f1e64e66499b.
+- Main runtime: C:\ZeldaDev\runtime\development\soh.exe.
+- Alternate runtime: C:\ZeldaDev\runtime\living-hyrule-playtest\soh.exe.
+- Receipt: C:\ZeldaDev\docs\BUILD-GRAPHICS-COMPATIBILITY-6d91da1.json.
+- Logs: C:\ZeldaDev\logs\graphics-compatibility-*.log.
+- Owner guide: C:\ZeldaDev\docs\PLAY-LIVING-HYRULE.md.
 
-Desktop shortcut Living Hyrule (Modded) points to
-C:\ZeldaDev\runtime\development\soh.exe with the matching working directory.
-Additional residents and the optional challenge are enabled in that profile.
-User settings, including Infinite Health, are preserved. Vanilla and ROM remain
-separate and untouched. No game process has been started.
-
-Logs: C:\ZeldaDev\logs\overnight-kingdom-recovery-{tests,configure,build,stage}-final.log.
-Owner guide: C:\ZeldaDev\docs\PLAY-LIVING-HYRULE.md.
+The desktop Living Hyrule (Modded) shortcut opens the main runtime. Existing
+preferences, including residents/challenge and cheats, are preserved. Never use
+Build.ps1 Run or All without a new explicit request to launch the game.
 
 ## Remaining scope
 
-This is a testable development milestone, not the whole finished vision. Full
-castle/shop interiors, wider contextual population and properties, more daily
-routines, equipment models and deeper combat remain. The 110-scene population
-plan distinguishes the implemented cast from future locations.
-
-An account-usage interruption stopped work during part of the overnight period.
-Work resumed after the owner's continue message, integrated the current stage,
-and froze scope when they asked to test. Do not report uninterrupted overnight
-implementation or gameplay verification.
+Full castle/shop interiors, wider contextual population and properties, more
+daily routines, equipment models and deeper combat remain unfinished. The
+110-scene population plan separates implemented residents from future locations.
+Do not resume broader development or upload local ROMs/assets/saves/binaries.
+The repository ignore rules and source-only Git guards remain enabled.

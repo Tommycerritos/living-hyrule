@@ -54,8 +54,8 @@ the original adventure:
   Preferred gifts earn 8 trust, other gifts 4. Zelda recognizes eight recovery
   deeds once each for 5 trust; ordinary repeat conversations earn no points.
 
-**Installed build:** **e575c93** (source **e575c936c**), the schema-five recovery
-stage, passed all **25 native and local-resource suites**, full compilation and
+**Installed build:** **6d91da1** (source **6d91da1b4**), the graphics compatibility
+follow-up to schema-five recovery, passed all **25 native and local-resource suites**, full compilation and
 installation verification on September 15, 2026. Both modded runtime copies match
 the compiled executable and port archive. Both settings files and all four saves
 are unchanged. No game was started; the owner is testing this fixed milestone.

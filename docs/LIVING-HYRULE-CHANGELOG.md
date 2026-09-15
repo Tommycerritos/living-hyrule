@@ -1,6 +1,6 @@
 # Living Hyrule changelog
 
-## 2026-09-15 - Graphics-pack compatibility
+## 2026-09-15 - Graphics-pack compatibility (installed 6d91da1)
 
 - Removed the blanket alternate-assets exclusion from added encounters. Texture
   packs and unrelated Link models now pass; checks target the encounter's actual
@@ -13,6 +13,9 @@
   colors and connected Anchor appearances still take priority.
 - Added graphics-pack policy coverage and verified the animation manifest and
   rig shape against the local native archive. Save schema remains five.
+- **Installed verification:** source **6d91da1b4**, embedded **6d91da1**, passed
+  all 25 automated suites, full compilation, staging and matching-file checks
+  in both modded runtimes. Current settings and all four saves are unchanged.
 - Third-party packs and gameplay visuals require owner testing. This change
   does not install a texture pack or alter FPS, resolution, saves or preferences.
 
