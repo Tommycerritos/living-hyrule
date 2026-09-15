@@ -1,6 +1,35 @@
 # Living Hyrule changelog
 
-## 2026-09-14 — Regional property economy
+## 2026-09-15 - World life, direct trade and combat challenge
+
+- Added seventeen residents beyond the original three, across the Market,
+  Field, ranch, lake, Kokiri Forest, Goron City, Zora River, Gerudo Valley and
+  Fortress. Native regional silhouettes, compatible idles and original dialogue
+  retain cultural and story context. Schedules respect recovery and access.
+- Connected fifteen regional deeds plus the cottage to manager conversations.
+  Confirmed offers purchase or repair with actual bank rupees. Bram and Orlen
+  provide wallet withdrawal/deposit services; the cloth workshop remains in
+  the ledger. Dialogue ownership and fresh-button checks prevent repeated or
+  accidental charges, including pending item-putaway conversations.
+- Added non-colliding repair/operating supply crates beside seven business
+  managers, subject to safe ground and density limits. Building restoration
+  and new interiors remain unfinished.
+- Extended free post-Ganon Market Redead removal to offscreen enemies so
+  returning relief workers do not depend on enemy update visibility.
+- Added optional double ordinary enemy/boss collision damage and alternating
+  temporary loose-heart filtering. Existing cheats/modifiers take priority;
+  emergency hearts and permanent pickups keep their normal rules.
+- Passed ten native suites covering economy, saves, properties, confirmation,
+  world/cultural schedules, property supplies and challenge policy. Full
+  integration/build results are recorded in the worklog. No game launch.
+- Reduced repeated Windows metadata-copy work while preserving extra local
+  files and retaining the portable CMake fallback.
+
+The wider relationship, reconstruction, stewardship, Zelda/castle and equipment
+vision remains in progress. This entry describes actual source implementation;
+the worklog identifies which executable has successfully built and been installed.
+
+## 2026-09-14 - Regional property economy
 
 - Implemented sixteen bank-funded deeds across eight regions, with local purchase
   requirements, independent income timers, crisis shutdowns and paid repairs.

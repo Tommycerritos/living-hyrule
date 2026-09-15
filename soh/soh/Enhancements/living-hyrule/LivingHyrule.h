@@ -3,6 +3,8 @@
 #include "Properties.h"
 #include <string>
 
+struct Actor;
+
 namespace LivingHyrule {
 
 enum class Action { Enable, Disable, Deposit, Withdraw, BuyCottage, BuyProperty, RepairProperty };
@@ -22,6 +24,8 @@ struct Status {
 };
 
 Status GetStatus();
+WorldProgress GetWorldProgress();
 std::string PerformAction(Action action, uint32_t amount = 0);
+std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action action, uint32_t amount = 0);
 
 } // namespace LivingHyrule

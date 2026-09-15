@@ -1,4 +1,5 @@
 #include "LivingHyrule.h"
+#include "ChallengeMode.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -18,8 +19,7 @@
 
 namespace LivingHyrule {
 
-// Cottage purchases use this ledger. The additional residents discuss the
-// property, while their talk interactions do not yet perform transactions.
+// The ledger and resident conversations share the same validated transactions.
 class LivingHyruleWindow final : public Ship::GuiWindow {
   public:
     using GuiWindow::GuiWindow;
@@ -210,8 +210,10 @@ void LivingHyruleWindow::DrawElement() {
         Ship::Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
     }
     ImGui::TextWrapped(
-        "Meet Tavin, Bram, and Orlen in Kakariko during the day. Their presence and conversations change "
-        "as the village recovers.");
+        "Meet residents in Kakariko, Castle Town, Hyrule Field, Lon Lon Ranch, Kokiri Forest, Goron City, "
+        "Zora's River, Lake Hylia, Gerudo Valley and Gerudo's Fortress. "
+        "Work shifts and returning traders follow the region's story and business recovery.");
+    DrawChallengeControls();
     ImGui::Separator();
     if (!status.loaded) {
         ImGui::Spacing();
@@ -238,7 +240,7 @@ void LivingHyruleWindow::DrawElement() {
     DrawProperties(status);
 
     ImGui::Separator();
-    ImGui::TextWrapped("Save your game normally to save your bank balance, cottage, and rent progress.");
+    ImGui::TextWrapped("Save your game normally to keep your bank balance, deeds, repairs and income progress.");
     if (!mFeedback.empty()) {
         ImGui::Spacing();
         ImGui::TextWrapped("%s", mFeedback.c_str());
@@ -257,7 +259,7 @@ static void RegisterLivingHyruleMenu() {
         .CVar(CVAR_WINDOW("LivingHyrule"))
         .WindowName("Living Hyrule")
         .Options(UIWidgets::WindowButtonOptions()
-                     .Tooltip("Manage your bank account and Kakariko Cottage.")
+                     .Tooltip("Manage savings, properties, residents and combat difficulty.")
                      .EmbedWindow(false));
 }
 

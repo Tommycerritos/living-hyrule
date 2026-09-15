@@ -1,5 +1,9 @@
 #include "LivingHyrule.h"
 #include "SaveCodec.h"
+#include "ResidentActor.h"
+#include "WorldResidents.h"
+#include "ForestMountainResidents.h"
+#include "WaterDesertResidents.h"
 
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Notification/Notification.h"
@@ -72,7 +76,7 @@ static bool IsKakarikoTradeOpen() {
     return LINK_IS_CHILD || CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW);
 }
 
-static WorldProgress ReadWorldProgress() {
+WorldProgress GetWorldProgress() {
     WorldProgress world;
     world.adult = LINK_IS_ADULT;
     world.forest = CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST);
@@ -134,7 +138,7 @@ Status GetStatus() {
     status.walletCapacity = CUR_CAPACITY(UPG_WALLET);
     status.inKakariko = gPlayState->sceneNum == SCENE_KAKARIKO_VILLAGE;
     status.cottageTradeOpen = IsKakarikoTradeOpen();
-    status.world = ReadWorldProgress();
+    status.world = GetWorldProgress();
     status.currentRegion = CurrentRegion();
 
     if (!IsSupportedAdventure()) {
@@ -186,12 +190,7 @@ static const char* ExplainResult(Result result) {
     return "The transaction could not be completed.";
 }
 
-std::string PerformAction(Action action, uint32_t amount) {
-    // Recheck on every click; never trust a previously drawn menu's availability.
-    const auto status = GetStatus();
-    if (!status.canUseLedger) {
-        return status.reason;
-    }
+static std::string ApplyAction(Action action, uint32_t amount, const Status& status) {
     auto& economy = gSaveContext.ship.livingHyrule;
     switch (action) {
         case Action::Enable:
@@ -229,6 +228,45 @@ std::string PerformAction(Action action, uint32_t amount) {
     return "The transaction could not be completed.";
 }
 
+std::string PerformAction(Action action, uint32_t amount) {
+    const auto status = GetStatus();
+    return status.canUseLedger ? ApplyAction(action, amount, status) : status.reason;
+}
+
+std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action action, uint32_t amount) {
+    if (!GameInteractor::IsSaveLoaded(false) || !IsSupportedAdventure() || actor == nullptr ||
+        actor->update == nullptr ||
+        (!IsResidentActor(actor) && !IsWorldResidentActor(actor) && !IsForestMountainResidentActor(actor) &&
+         !IsWaterDesertResidentActor(actor))) {
+        return "Please speak directly to a Living Hyrule trader.";
+    }
+    Player* player = GET_PLAYER(gPlayState);
+    if (player == nullptr || gPlayState->msgCtx.talkActor != actor || player->talkActor != actor ||
+        !(player->stateFlags1 & PLAYER_STATE1_TALKING) || gPlayState->msgCtx.textId != quoteTextId ||
+        Message_GetState(&gPlayState->msgCtx) != TEXT_STATE_CHOICE || gPlayState->msgCtx.choiceIndex != 0 ||
+        !(gPlayState->state.input[0].press.button & BTN_A) || (gPlayState->state.input[0].cur.button & BTN_B) ||
+        (gPlayState->state.input[0].press.button & BTN_CUP)) {
+        return "The offer has expired. Speak to the trader again.";
+    }
+    // Ordinary talking sets IN_CUTSCENE. Allow only that exact owned dialogue;
+    // do not clear player flags or use the ledger's no-dialogue readiness rule.
+    if (gPlayState->pauseCtx.state != 0 || gPlayState->pauseCtx.debugState != 0 ||
+        gPlayState->gameOverCtx.state != GAMEOVER_INACTIVE || gPlayState->transitionTrigger != TRANS_TRIGGER_OFF ||
+        gPlayState->transitionMode != TRANS_MODE_OFF || gPlayState->csCtx.state != CS_STATE_IDLE ||
+        player->csAction != PLAYER_CSACTION_NONE || IS_CUTSCENE_LAYER || player->unk_6AD == 4 ||
+        (player->stateFlags1 &
+         (PLAYER_STATE1_DEAD | PLAYER_STATE1_LOADING | PLAYER_STATE1_GETTING_ITEM | PLAYER_STATE1_IN_ITEM_CS)) ||
+        (player->stateFlags3 & PLAYER_STATE3_FLYING_WITH_HOOKSHOT) || gSaveContext.health <= 0 ||
+        gSaveContext.gameMode != GAMEMODE_NORMAL || gSaveContext.rupeeAccumulator != 0) {
+        return "We can finish this business when it is safe to talk.";
+    }
+    if (action == Action::Enable || action == Action::Disable || !IsValidState(gSaveContext.ship.livingHyrule) ||
+        !SaveManager::Instance->SaveFile_Exist(gSaveContext.fileNum)) {
+        return "This account is not available for trading.";
+    }
+    return ApplyAction(action, amount, GetStatus());
+}
+
 static void UpdateRent() {
     if (!IsSafeGameplay() || !IsSupportedAdventure() ||
         Ship::Context::GetRawInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible()) {
@@ -247,8 +285,25 @@ static void UpdateRent() {
     if (rent != 0) {
         Notification::Emit({ .message = "Kakariko rent: " + std::to_string(rent) + " rupees deposited." });
     }
-    if (const uint32_t income = TickBusinesses(economy, ReadWorldProgress()); income != 0) {
+    if (const uint32_t income = TickBusinesses(economy, GetWorldProgress()); income != 0) {
         Notification::Emit({ .message = "Business income: " + std::to_string(income) + " rupees deposited." });
+    }
+}
+
+static void ClearMarketThreats() {
+    if (!IsSupportedAdventure() || !GameInteractor::IsSaveLoaded(false) || IS_CUTSCENE_LAYER)
+        return;
+    const auto& economy = gSaveContext.ship.livingHyrule;
+    if (!ShouldClearMarketThreats(GetWorldProgress(), IsValidState(economy) && economy.enabled == 1,
+                                  gPlayState->sceneNum == SCENE_MARKET_RUINS))
+        return;
+    // Clear every ruined-market Redead, including actors whose own update has
+    // been culled offscreen. The world can then safely receive relief workers.
+    for (int category = 0; category < ACTORCAT_MAX; ++category) {
+        for (Actor* actor = gPlayState->actorCtx.actorLists[category].head; actor != nullptr; actor = actor->next) {
+            if (actor->id == ACTOR_EN_RD && actor->update != nullptr)
+                Actor_Kill(actor);
+        }
     }
 }
 
@@ -264,16 +319,7 @@ static void RegisterLivingHyrule() {
     SaveManager::Instance->AddLoadFunction("livingHyrule", SECTION_VERSION_FALLBACK, PreserveUnreadableSave);
     SaveManager::Instance->AddSaveFunction("livingHyrule", 1, SaveSave, true, SECTION_PARENT_NONE, CanSave);
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(UpdateRent);
-    GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnActorUpdate>(ACTOR_EN_RD, [](void* actorPtr) {
-        if (!IsSupportedAdventure() || !GameInteractor::IsSaveLoaded(false) || IS_CUTSCENE_LAYER) return;
-        const auto& economy = gSaveContext.ship.livingHyrule;
-        if (ShouldClearMarketThreats(ReadWorldProgress(), IsValidState(economy) && economy.enabled == 1,
-                                     gPlayState->sceneNum == SCENE_MARKET_RUINS)) {
-            // Ending Ganon's curse makes the ruined market safe without payment.
-            // No story flags, dungeon enemies or scene geometry are changed.
-            Actor_Kill(static_cast<Actor*>(actorPtr));
-        }
-    });
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(ClearMarketThreats);
 }
 
 static RegisterShipInitFunc initFunc(RegisterLivingHyrule);

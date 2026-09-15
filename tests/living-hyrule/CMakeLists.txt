@@ -55,3 +55,58 @@ else()
     target_compile_options(living_hyrule_property_tests PRIVATE -Wall -Wextra -Werror -pedantic)
 endif()
 add_test(NAME living_hyrule_property_tests COMMAND living_hyrule_property_tests)
+
+add_executable(living_hyrule_trade_tests TradeTests.cpp)
+target_compile_features(living_hyrule_trade_tests PRIVATE cxx_std_17)
+target_include_directories(living_hyrule_trade_tests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/soh/Enhancements/living-hyrule"
+)
+if(MSVC)
+    target_compile_options(living_hyrule_trade_tests PRIVATE /W4 /WX /permissive-)
+else()
+    target_compile_options(living_hyrule_trade_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+endif()
+add_test(NAME living_hyrule_trade_tests COMMAND living_hyrule_trade_tests)
+
+add_executable(living_hyrule_challenge_tests ChallengeTests.cpp)
+target_compile_features(living_hyrule_challenge_tests PRIVATE cxx_std_17)
+target_include_directories(living_hyrule_challenge_tests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/soh/Enhancements/living-hyrule"
+)
+if(MSVC)
+    target_compile_options(living_hyrule_challenge_tests PRIVATE /W4 /WX /permissive-)
+else()
+    target_compile_options(living_hyrule_challenge_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+endif()
+add_test(NAME living_hyrule_challenge_tests COMMAND living_hyrule_challenge_tests)
+
+add_executable(living_hyrule_world_population_tests WorldPopulationTests.cpp)
+target_compile_features(living_hyrule_world_population_tests PRIVATE cxx_std_17)
+target_include_directories(living_hyrule_world_population_tests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/soh/Enhancements/living-hyrule"
+)
+if(MSVC)
+    target_compile_options(living_hyrule_world_population_tests PRIVATE /W4 /WX /permissive-)
+else()
+    target_compile_options(living_hyrule_world_population_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+endif()
+add_test(NAME living_hyrule_world_population_tests COMMAND living_hyrule_world_population_tests)
+
+foreach(suite IN ITEMS Scenery ForestMountain WaterDesert)
+    string(TOLOWER "${suite}" suite_lower)
+    set(target_name "living_hyrule_${suite_lower}_tests")
+    add_executable(${target_name} "${suite}Tests.cpp")
+    target_compile_features(${target_name} PRIVATE cxx_std_17)
+    target_include_directories(${target_name} PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/soh/Enhancements/living-hyrule"
+    )
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE /W4 /WX /permissive-)
+    else()
+        target_compile_options(${target_name} PRIVATE -Wall -Wextra -Werror -pedantic)
+    endif()
+    add_test(NAME ${target_name} COMMAND ${target_name})
+endforeach()

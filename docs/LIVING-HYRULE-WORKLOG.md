@@ -9,11 +9,30 @@ perform final gameplay testing. Do not claim runtime acceptance from a build.
 
 Overnight continuation is scheduled every fifteen minutes in this task, automation ID
 `living-hyrule-overnight-development`, until 08:00 September 15, 2026 in
-America/Chihuahua. At the cutoff finish a safe checkpoint and pause it. No new
-subagents are authorized. Read the full vision at
+America/Chihuahua (14:00 UTC). Windows currently reports a different local
+zone, UTC-07, so use the named zone or UTC deadline rather than raw Get-Date. At the cutoff finish a safe checkpoint and pause it. Parallel agent work is
+now authorized by the active developer mode; coordinate file ownership. Read the full vision at
 `C:\ZeldaDev\docs\LIVING-HYRULE-VISION.md` and the 110-scene population plan.
 
-## Current work, September 14, regional-property increment
+## Active next increment: world life
+
+`feature/living-hyrule-world-life` starts from integrated 589e09e1e. Work is in
+progress; the installed regional-property build below remains the last confirmed
+runtime until a later verification update replaces this note.
+
+Source implementation is complete for this increment: shared confirmed NPC
+transactions, seventeen further residents including native Kokiri/Goron/Zora/
+Gerudo models, safe property supply markers, and optional dangerous combat and
+scarce temporary hearts. Twenty total residents cover ten named locations.
+Fifteen deeds and the cottage have NPC transactions; the cloth workshop remains
+ledger-only. No building reconstruction or new interiors are claimed.
+
+All ten combined native suites passed. Dialogue lifecycle and native draw/actor
+integration were reviewed; candidate ground/body footprints were checked against
+the owner's local collision resources without running the game. Full compilation
+and staging follow this source checkpoint. No game launch is permitted.
+
+## Last installed build: regional-property increment
 
 Code commit: `f71940314285356c2faa781126d17a175d30555d`, feature branch
 `feature/living-hyrule-regional-properties`. **All four automated test suites

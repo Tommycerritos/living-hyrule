@@ -1,6 +1,7 @@
 #include "ResidentActor.h"
 #include "Economy.h"
 #include "Population.h"
+#include "TradeDialogue.h"
 
 #include "soh/ActorDB.h"
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
@@ -25,6 +26,7 @@ namespace LivingHyrule {
 namespace {
 
 constexpr uint16_t kFirstResidentText = 0x9400;
+constexpr uint16_t kFirstResidentReply = 0x9420;
 constexpr size_t kResidentRoleCount = static_cast<size_t>(ResidentRole::Count);
 constexpr s32 kCarpenterLimbCount = 17;
 constexpr float kAngleToRadians = 3.14159265358979323846f / 32768.0f;
@@ -41,6 +43,7 @@ struct ResidentActor {
     s16 talkState;
     u16 idleTicks;
     bool initialized;
+    TradeDialogueState trade;
 };
 
 static_assert(std::is_trivial_v<ResidentActor>);
@@ -94,10 +97,8 @@ std::string BuildDialogue(ResidentRole role) {
             text += child      ? "A village grows one sound roof at a time."
                     : restored ? "The village feels steadier now. There are roofs to mend and lives to rebuild."
                                : "Good beams are worth keeping close in hard times.";
-            text += ownsCottage
-                        ? "^Your cottage deed is in order. Bram knows where to bring the rent."
-                        : "^The rental cottage costs " + std::to_string(kCottagePrice) +
-                              " rupees from your bank. Open the Living Hyrule ledger here in the village to buy it.";
+            text += ownsCottage ? "^Your cottage deed is in order. Bram knows where to bring the rent."
+                                : "^I handle the rental cottage deed. Bram would make a dependable tenant.";
             return text;
         }
         case ResidentRole::Tenant: {
@@ -106,7 +107,8 @@ std::string BuildDialogue(ResidentRole role) {
                     : restored ? "People are venturing out again. That means honest work for a boot-mender."
                                : "We keep close to home these days. Even so, someone has to keep the village walking.";
             text += ownsCottage
-                        ? "^So you hold the cottage deed now? A dry roof and a quiet corner suit me well."
+                        ? "^So you hold the cottage deed now? A dry roof and a quiet corner suit me well. I can help "
+                          "you draw spending money from the bank."
                         : "^I have my eye on that little rental cottage. A quiet corner would make a fine workshop.";
             return text;
         }
@@ -115,10 +117,9 @@ std::string BuildDialogue(ResidentRole role) {
             text += child      ? "Tavin gets the straight beams. I keep the bent ones for smaller jobs."
                     : restored ? "Deliveries are moving again. We can think beyond the next repair."
                                : "I count every plank twice while the roads are uncertain.";
-            text +=
-                ownsCottage
-                    ? "^A landlord should know the tradesfolk. A well-kept cottage is worth more than a grand promise."
-                    : "^A roof needs more than a deed. Get to know the people who keep it standing.";
+            text += ownsCottage
+                        ? "^A landlord should know the tradesfolk. I can lodge your spare wallet rupees with the bank."
+                        : "^Saving for a roof? I can lodge your spare wallet rupees with the bank.";
             return text;
         }
         case ResidentRole::Count:
@@ -128,26 +129,68 @@ std::string BuildDialogue(ResidentRole role) {
 }
 
 void LoadResidentText(uint16_t* textId, bool* loadFromMessageTable) {
-    if (*textId < kFirstResidentText || *textId >= kFirstResidentText + kResidentRoleCount) {
+    const bool reply = *textId >= kFirstResidentReply && *textId < kFirstResidentReply + kResidentRoleCount;
+    if (!reply && (*textId < kFirstResidentText || *textId >= kFirstResidentText + kResidentRoleCount)) {
         return;
     }
-    // OnOpenText precedes msgCtx.talkActor assignment; the private text ID
-    // identifies the role without consulting a stale actor pointer.
-    CustomMessage message(BuildDialogue(static_cast<ResidentRole>(*textId - kFirstResidentText)));
+    const auto role = static_cast<ResidentRole>(*textId - (reply ? kFirstResidentReply : kFirstResidentText));
+    Player* player = gPlayState != nullptr ? GET_PLAYER(gPlayState) : nullptr;
+    Actor* actor = player != nullptr ? player->talkActor : nullptr;
+    std::string text = "Please speak to me again when you are ready.";
+    // Player's talkActor is assigned before the initial textbox opens; the
+    // message context's talkActor can still point to an earlier conversation.
+    if (IsResidentActor(actor) && GetResidentRole(actor) == role && actor->update != nullptr) {
+        auto* resident = reinterpret_cast<ResidentActor*>(actor);
+        text = reply ? std::string(resident->trade.response)
+                     : BuildDialogue(role) + DescribeTradeOffer(resident->trade.offer);
+    }
+    CustomMessage message(text);
     message.AutoFormat();
     message.LoadIntoFont();
     *loadFromMessageTable = false;
 }
 
 u16 GetTextId(PlayState*, Actor* actor) {
-    return static_cast<u16>(kFirstResidentText + actor->params);
+    const auto textId = static_cast<u16>(kFirstResidentText + actor->params);
+    auto* resident = reinterpret_cast<ResidentActor*>(actor);
+    Player* player = gPlayState != nullptr ? GET_PLAYER(gPlayState) : nullptr;
+    if (player != nullptr && player->talkActor == actor && (player->stateFlags1 & PLAYER_STATE1_TALKING))
+        return textId;
+    switch (static_cast<ResidentRole>(actor->params)) {
+        case ResidentRole::Carpenter:
+            if (OwnsCottage())
+                PreparePropertyTrade(resident->trade, 9, textId);
+            else
+                PrepareCottageTrade(resident->trade, textId);
+            break;
+        case ResidentRole::Tenant:
+            PrepareBankTrade(resident->trade, false, textId);
+            break;
+        case ResidentRole::Supplier:
+            PrepareBankTrade(resident->trade, true, textId);
+            break;
+        default:
+            resident->trade = {};
+            break;
+    }
+    return textId;
 }
 
 s16 UpdateTalkState(PlayState* play, Actor* actor) {
     const auto state = Message_GetState(&play->msgCtx);
-    if (play->msgCtx.talkActor != actor || state == TEXT_STATE_NONE || state == TEXT_STATE_CLOSING) {
+    const Player* player = GET_PLAYER(play);
+    const bool playerTalking =
+        player != nullptr && player->talkActor == actor && (player->stateFlags1 & PLAYER_STATE1_TALKING);
+    if (play->msgCtx.talkActor != actor || state == TEXT_STATE_NONE) {
+        // Link may still be putting away an item after consuming the actor's
+        // talk request. Preserve this phase until Player_SetupTalk opens text.
+        return playerTalking ? NPC_TALK_STATE_TALKING : NPC_TALK_STATE_IDLE;
+    }
+    if (state == TEXT_STATE_CLOSING) {
         return NPC_TALK_STATE_IDLE;
     }
+    auto* resident = reinterpret_cast<ResidentActor*>(actor);
+    HandleTradeChoice(play, actor, resident->trade, static_cast<uint16_t>(kFirstResidentReply + actor->params));
     return NPC_TALK_STATE_TALKING;
 }
 
@@ -197,7 +240,10 @@ void UpdateResident(Actor* actor, PlayState* play) {
     }
     const auto role = static_cast<ResidentRole>(actor->params);
     const bool present = HasValidRole(actor) && ShouldResidentBePresent(play, role);
-    const bool talking = play->msgCtx.talkActor == actor && Message_GetState(&play->msgCtx) != TEXT_STATE_NONE;
+    const Player* player = GET_PLAYER(play);
+    const bool talking =
+        (play->msgCtx.talkActor == actor && Message_GetState(&play->msgCtx) != TEXT_STATE_NONE) ||
+        (player != nullptr && player->talkActor == actor && (player->stateFlags1 & PLAYER_STATE1_TALKING));
     const bool requested = (actor->flags & ACTOR_FLAG_TALK) != 0;
     if (!present && !talking && !requested) {
         Actor_Kill(actor);
@@ -295,6 +341,8 @@ int RegisterResidentActor() {
     for (size_t role = 0; role < kResidentRoleCount; ++role) {
         GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnOpenText>(
             static_cast<int32_t>(kFirstResidentText + role), LoadResidentText);
+        GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnOpenText>(
+            static_cast<int32_t>(kFirstResidentReply + role), LoadResidentText);
     }
     return residentActorId;
 }

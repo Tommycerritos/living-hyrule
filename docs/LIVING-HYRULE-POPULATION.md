@@ -1,4 +1,4 @@
-# Living Hyrule population plan
+# Living Hyrule population: implementation and plan
 
 ## Scope and implementation status
 
@@ -7,11 +7,17 @@ This is a design for all **110 scene IDs**, `0x00` through `0x6D`, in the
 should gain residents and places that should deliberately remain empty. Room,
 entrance, and age variants within a scene still need individual placement work.
 
-**The first implementation scope is three additional Kakariko residents only.**
-The wider cast, regional schedules, new shops, recovery populations, and postgame
-placements below are **Planned**, not implemented. This document does not claim
-that the new residents have been playtested in the running game. Gameplay
-acceptance belongs to the project owner.
+**The current stage has 20 unique resident identities:** three in the original
+Kakariko module, nine Hylian townsfolk and travelers, four Kokiri/Goron residents,
+and four Zora/Gerudo residents. The new regional actors, shared purchase/repair
+dialogue, and business supply props are being integrated for a combined build.
+The tables headed **Implemented in source** describe that code; they do not
+claim a successful build or gameplay acceptance. The owner will test the final
+playable result. No game launch is part of this implementation pass.
+
+This remains a small population in selected settlements, not worldwide coverage
+of the 110 scenes. The later cast, interiors, walking routes, relationships,
+population growth, and full reconstruction remain **Planned**.
 
 The goal from the [local creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md)
 is to make Hyrule feel inhabited while preserving its original adventure. Existing
@@ -19,7 +25,7 @@ quest actors, story items, songs, dungeons, rewards, and required routes keep th
 roles. A new resident has a new identity and dialogue; reusing a model does not
 make that resident a duplicate of its original character.
 
-## First Kakariko cast
+## Implemented in source: Kakariko cast
 
 The **Additional residents** checkbox is independent of the per-file economy
 enable control and defaults off. The initial three appear outdoors in Kakariko
@@ -31,26 +37,104 @@ in daylight, with the following story conditions:
 | Bram | Boot-mender and cottage tenant; measures a recovery by how many people need walking shoes | Carpenter model, another head, slate-blue clothing tint and a shorter, slower idle | Present | Remains and discusses the disruption | Remains and discusses recovery |
 | Orlen | Traveling supplier; remembers roads, prices, and which households need a delivery | Carpenter model, third head, moss-green clothing tint and a livelier idle | Present | Off the unsafe route | Returns |
 
-All three are absent outdoors at night in this first increment; no indoor
+All three are absent outdoors at night; no indoor
 relocation is implied. They reuse the existing carpenter skeleton, head variants,
 and clothing color support through new actor instances with their own behavior.
 The palette descriptions are the art direction, not a promise of new textures or
 equipment. Their dialogue can react to age, recovery, and cottage ownership.
 They do not inherit the four original carpenters' rescue flags or schedules.
 
-Tavin's presence introduces a person behind the property system. Bram gives the
-cottage a social context. Orlen makes a returning trade route visible. The bank
-and cottage ledger remain the current economy interface until an NPC transaction
-flow is implemented and checked. No new building interior is implied by these
-residents.
+The shared transaction dialogue now gives Tavin the cottage purchase, then the
+builders' yard deed and adult repairs after the cottage is owned. Bram offers a
+bank withdrawal up to the wallet's available space; Orlen offers a deposit up to
+the wallet balance and bank limit. Each offer shows the amount and a choice.
+The ledger remains available, including for the cloth workshop, which has no
+resident seller yet. No new building interior is implied by these residents.
+
+## Implemented in source: regional cast and schedules
+
+All families use the same **Additional residents** option. Ordinary daytime
+residents can appear while the per-file economy is paused; purchases, repairs,
+business-funded night shifts, and adult market relief require an enabled,
+readable economy. Unsupported adventure modes, debug saves, cutscene scene
+layers, and unrecognized locations are excluded. Actual spawning also needs
+clear floor and interaction space, so an eligible schedule does not guarantee
+that a candidate will be placed.
+
+### Nine Hylian townsfolk and travelers
+
+| Resident | Place and work | Child schedule | Adult schedule | Property dialogue |
+| --- | --- | --- | --- | --- |
+| Vessa | Market grocer | Daytime market | Daytime after the saved Ganon-completion flag, with economy enabled; available before buying or repairing | Market produce stall (0) |
+| Hadrin | Market porter | Daytime market | Same market relief gate as Vessa | Market guesthouse (1) |
+| Pella | Market lantern keeper | Night market | Night after the same market relief gate | Conversation only |
+| Caro | Field road courier | Daytime | Daytime after Forest Medallion | South road orchard (2) |
+| Hollis | Field supply trader | Daytime | Daytime after Forest Medallion | Caravan supply yard (3) |
+| Nessa | Ranch feed buyer | Daytime | Daytime after the original Epona escape | Pasture lease (4) |
+| Wren | Ranch stable hand | Daytime; night if the dairy operates | Remains by day through the ranch crisis; night if the dairy operates | Dairy partnership (5), subject to the ranch trade gate |
+| Vero | Lakeside net mender | Daytime | Daytime after Water Medallion | Fishing cooperative (12) |
+| Edda | Lakeside research assistant | Daytime; night if the fishing cooperative operates | Remains by day during the water crisis; night if the cooperative operates | Conversation only |
+
+These actors use compatible civilian skeleton/head families with individual
+clothing palettes, proportions, and idle poses. They stand at authored work or
+travel stops; walking journeys and indoor relocation are not implemented.
+Adult market relief reads the existing saved completion flag. It neither creates
+a postgame save nor reconstructs the ruined market.
+
+### Four Kokiri and Gorons
+
+| Resident | Place and work | Daytime availability | Night availability | Property dialogue |
+| --- | --- | --- | --- | --- |
+| Fenn | Kokiri Forest seed sorter | Child; adult after Forest Medallion | Absent | Seed garden (6) |
+| Luma | Kokiri Forest gatherer and craft worker | Child; adult after Forest Medallion | Absent | Woodland workshop (7) |
+| Doron | Goron City stone grader | Child; adult after Fire Medallion | Absent | Goron stoneworks (10) |
+| Brakka | Goron City kiln tender | Child; adult after Fire Medallion | Present only with an operating kiln | Goron kiln partnership (11) |
+
+The forest pair is limited to Kokiri Forest room 0 and retains Kokiri bodies in
+both eras. The Goron pair uses the main cavern's lower walkway in room 3, with
+child dialogue acknowledging the food shortage before the Goron Ruby. Neither
+pair appears at its worksite during the corresponding adult crisis; no hidden
+indoor schedule is implied. These modules use their native Kokiri and Goron art
+families with their own behavior, not the original actors' quest or reward logic.
+
+### Four Zoras and Gerudos
+
+| Resident | Place and work | Daytime availability | Night availability | Property dialogue |
+| --- | --- | --- | --- | --- |
+| Lethra | Spring keeper on a dry lower Zora's River bank | Child and adult; remains as a refugee during the water crisis | Absent | Waterway supplies (13); adult trade waits for Water Medallion |
+| Neris | Zora courier on the same river bank | Child; adult after Water Medallion | Present only with operating waterway supplies | Conversation only |
+| Rasha | Caravan quartermaster on the public, field-side high ground in Gerudo Valley | Child as a nontrading visitor; adult after all four carpenter rescues and membership | Adult with those access conditions and an operating caravan partnership | Caravan partnership (14); adult trade also needs Spirit Medallion |
+| Kesra | Cloth trader at the lower fortress common approach | Adult after all four carpenter rescues and membership | Same access conditions and an operating textile workshop | Textile workshop (15); trade also needs Spirit Medallion |
+
+Zoras use their native skeleton and skin; Gerudos use compatible civilian art,
+distinct hairstyles, poses, and modest scale differences. New actors have no
+arrest, rescue, membership-card, archery-reward, or gate authority. Daytime Gerudo
+conversation before Spirit recovery does not permit a purchase. No new Zoras
+spawn in the frozen Domain or Fountain, and no thaw is implemented.
+
+### Visible business supplies
+
+The seven Hylian property contacts (Vessa, Hadrin, Caro, Hollis, Nessa, Wren, and
+Vero) can anchor decorative supplies when their property is owned, its region is
+open, and the economy is enabled. One standard-size wooden crate represents
+supplies awaiting adult repairs; three ground-level crates mark an operating
+business. At most three arrangements appear in one scene, with individual floor,
+water, body, actor, door, and interaction-space checks. If no candidate passes,
+no arrangement appears.
+
+Supplies are removed when their trader or property is unavailable. They have no
+collision barrier, drops, quest behavior, or saved placement. They do not restore
+buildings, add interiors, or depict working construction crews. The other resident
+families and the legacy cottage do not yet have these supply props.
 
 ## Population rules for later regions
 
 ### Story and recovery
 
 **C** below means Child Link, **A** means the adult region during its crisis,
-**R** means its story problem has been resolved, and **P** means a future
-persistent postgame. These are design stages, not a new set of completed features.
+**R** means its story problem has been resolved, and **P** means broader planned
+persistent postgame life. The implemented market relief gate above is a limited
+use of the saved completion flag, not that wider postgame system.
 
 - **Childhood:** settlements are busy at sensible hours. Preserve local problems,
   such as Goron hunger before Dodongo's Cavern is resolved; prosperity is not a
@@ -59,8 +143,8 @@ persistent postgame. These are design stages, not a new set of completed feature
   completion permits a return to paths and work areas, without relocating Saria
   or changing her role.
 - **Death Mountain:** Goron capture and the Fire Temple crisis empty work sites.
-  Story recovery allows workers to return; paid restoration and new businesses
-  are a later phase.
+  Story recovery allows the new workers to return. Paid business repairs reopen
+  income; physical restoration and construction work remain later phases.
 - **Water region:** the Water Temple allows the lake economy to recover. Zora's
   Domain remains visibly frozen in the original adult game, so the medallion
   alone must not place swimming residents inside ice. Thawing or restored geometry
@@ -71,11 +155,12 @@ persistent postgame. These are design stages, not a new set of completed feature
   Spirit Temple recovery each have distinct meanings. A friendly new resident
   must not bypass fortress access or turn every Gerudo into a shopkeeper.
 - **Castle Town:** ordinary civilian life does not return to the ruined adult
-  market during the main quest. A future persistent post-Ganon state must first
-  make the area safe; residents return before paid rebuilding makes it prosperous.
-- **Postgame:** no scene or resident may infer a completed persistent postgame
-  merely from entering an ending map. That state and its save behavior are future
-  architecture work.
+  market during the main quest. The current relief population requires the saved
+  Ganon-completion flag and enabled economy, matching the market enemy cleanup.
+  Building restoration remains separate work.
+- **Postgame:** entering an ending map is not proof of adventure completion.
+  Current relief reads the existing saved flag; new ending flow, postgame save
+  creation, castle life, and broad restored-world behavior remain future work.
 
 ### Density, time, and routes
 
@@ -114,10 +199,11 @@ authorship and permission review.
 | Guards, clergy, caretakers | Appropriate existing Hylian bodies and outfits | Roles should be recognizable without copying named story characters, unique royal silhouettes, or their story authority. |
 | Fairies and sacred locations | Existing fairy effects only where appropriate | Preserve solitude and the original reward ceremonies; no ordinary residents crowding a fountain. |
 
-## Planned regional cast
+## Wider regional cast and future roles
 
-Except for the first three Kakariko residents above, every person in this section
-is a proposed character, not an implemented NPC. Names are working names.
+The 20 names in the implementation tables above now have source implementations
+for only those locations and schedules. All other names below, and additional
+roles or places for existing names, remain proposals. New names are working names.
 
 | Region | Cast and daily life |
 | --- | --- |
@@ -132,8 +218,9 @@ is a proposed character, not an implemented NPC. Names are working names.
 
 ## Scene-by-scene coverage
 
-Every entry below is **Planned** unless explicitly identified as the first
-Kakariko scope. **Excluded** means no additional population is proposed in that
+Every entry below is **Planned** unless explicitly marked **Source**.
+**Source** means implemented code awaiting this stage's build and gameplay checks.
+**Excluded** means no additional population is proposed in that
 scene; the original actors remain. A recovered location is not automatically a
 safe NPC location: room layout and quest interactions still need review.
 
@@ -183,9 +270,9 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x1D` | `SCENE_MARKET_ENTRANCE_RUINS` | No new civilian traffic in A. Planned P relief deliveries after safety is implemented. | No automatic recovery during the main quest; quieter guarded nights in future P. |
 | `0x1E` | `SCENE_BACK_ALLEY_DAY` | Planned: Mira visiting a tailor, Hadrin with deliveries, one resident at a doorway. | C day; retain room for original dog, trade, and shop interactions. |
 | `0x1F` | `SCENE_BACK_ALLEY_NIGHT` | Planned: Pella tending lights and one late-returning resident. | C night; a quieter alley, not a second daytime market. |
-| `0x20` | `SCENE_MARKET_DAY` | Planned: Vessa, customers, a porter, and a visiting regional trader. | C day; distribute small groups without blocking the original market cast. |
-| `0x21` | `SCENE_MARKET_NIGHT` | Planned: sparse closing staff and a night steward. | C night; preserve the dog search, doors, and night atmosphere. |
-| `0x22` | `SCENE_MARKET_RUINS` | No added civilians in A. Planned P relief camp followed by paid reconstruction workers. | Safety before occupancy; rebuilding stages must match visible geometry. |
+| `0x20` | `SCENE_MARKET_DAY` | **Source:** Vessa and Hadrin. Additional customers remain planned. | Child day; adult only with the saved Ganon-completion flag and enabled economy. |
+| `0x21` | `SCENE_MARKET_NIGHT` | **Source:** Pella tending lights. | Child night; adult only with the saved Ganon-completion flag and enabled economy. Preserve the dog search and doors. |
+| `0x22` | `SCENE_MARKET_RUINS` | **Source:** Vessa/Hadrin by day and Pella by night after the relief gate. | Adult, saved Ganon-completion flag, enabled economy. No civilians before that gate, no rebuilt geometry or construction crews. |
 | `0x23` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_DAY` | Planned: Meret consulting records and one quiet pilgrim away from the entrance. | C day; no crowd over the story approach or Gossip Stones. |
 | `0x24` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_NIGHT` | Planned: one watchful caretaker near an existing safe edge. | C night; keep the temple's stillness. |
 | `0x25` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_RUINS` | No added everyday visitors in A; planned P caretaker after town safety. | Preserve adult story arrival and the ruined landscape. |
@@ -198,7 +285,7 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x27` | `SCENE_TWINS_HOUSE` | Planned: Luma or Nell on a rotating visit. | One visitor maximum; evening shelter instead of duplicate outdoor presence. |
 | `0x28` | `SCENE_MIDOS_HOUSE` | No permanent extra residents; occasional planned craft delivery after access review. | Respect Mido's home and original chests; no forced social quest. |
 | `0x29` | `SCENE_SARIAS_HOUSE` | Preserve as Saria's personal space. | A crisis and R do not turn her absence into a busy public building. |
-| `0x2A` | `SCENE_KAKARIKO_CENTER_GUEST_HOUSE` | Planned: Sella and a rotating traveler; later an indoor schedule for the first cast if space allows. | Night lodging and A refuge; preserve Talon and the original carpenters. Not in the first three-resident increment. |
+| `0x2A` | `SCENE_KAKARIKO_CENTER_GUEST_HOUSE` | Planned: Sella and a rotating traveler; later an indoor schedule for the Kakariko cast if space allows. | Night lodging and A refuge; preserve Talon and the original carpenters. No current indoor implementation. |
 | `0x2B` | `SCENE_BACK_ALLEY_HOUSE` | Planned: a small family or mender visit appropriate to the actual entrance. | One additional person; verify scene reuse and household identity before assigning names. |
 | `0x2C` | `SCENE_BAZAAR` | Planned: one customer or stock clerk. | Distinguish Market and Kakariko entrances; local cast and business hours, no duplicate shopkeeper or shelf logic. |
 | `0x2D` | `SCENE_KOKIRI_SHOP` | Planned: Bori delivering craft materials or one Kokiri customer. | Day trade, quiet at night; preserve the shopkeeper and stock. |
@@ -252,25 +339,25 @@ safe NPC location: room layout and quest interactions still need review.
 
 | ID | Scene | Population decision | Story and schedule |
 | --- | --- | --- | --- |
-| `0x51` | `SCENE_HYRULE_FIELD` | Planned: Caro, Hollis, and occasional pairs on selected roads or rest points. | C day travel; A fewer travelers near safe edges; R regional traffic; P linked routes. No night crowds among Stalchildren or across Epona routes. |
-| `0x52` | `SCENE_KAKARIKO_VILLAGE` | **First scope:** Tavin, Bram, and Orlen; additional regional cast remains Planned. | Day only: C all three; A Bram only; Shadow R all three. Night zero for this increment; future visits and lodgings need placement. |
+| `0x51` | `SCENE_HYRULE_FIELD` | **Source:** Caro and Hollis at fixed travel stops. Walking routes and further pairs remain planned. | Day only: child or adult with Forest Medallion. No night additions among Stalchildren or across Epona routes. |
+| `0x52` | `SCENE_KAKARIKO_VILLAGE` | **Source:** Tavin, Bram, and Orlen; additional regional cast remains planned. | Day only: child all three; adult crisis Bram only; Shadow recovery all three. No current night or indoor schedule. |
 | `0x53` | `SCENE_GRAVEYARD` | Planned: Orris tending paths and one respectful visitor. | Day work; sparse dusk mourning; no blocking tombs, race access, Dampe, or the Shadow Temple route. |
-| `0x54` | `SCENE_ZORAS_RIVER` | Planned: Sori at a safe bank, Neris on a Zora route, one daytime courier. | C modest travel; A reduced trade; R activity only on usable banks. Frogs, waterfall access, bean spots, and jump routes stay clear. |
-| `0x55` | `SCENE_KOKIRI_FOREST` | Planned: Fenn, Luma, Nell, and Bori in small task groups. | C lively; A shelter and watchfulness; Forest R outdoor work. Do not block Mido, the Deku Tree route, shop, or practice areas. |
+| `0x54` | `SCENE_ZORAS_RIVER` | **Source:** Lethra and Neris on a dry lower bank. Sori and other routes remain planned. | Day: Lethra in both eras, Neris as child or after Water Medallion. Night: Neris only with operating waterway supplies. |
+| `0x55` | `SCENE_KOKIRI_FOREST` | **Source:** Fenn and Luma in room 0. Nell, Bori, and further work groups remain planned. | Day only: child or adult with Forest Medallion. No adult-crisis or indoor substitute placement. |
 | `0x56` | `SCENE_SACRED_FOREST_MEADOW` | Planned: at most Tavi near the safe approach after Forest R. | Sparse by design; no villagers in the maze during danger or beside Saria's story position. |
-| `0x57` | `SCENE_LAKE_HYLIA` | Planned: Vero at the shore, Sori fishing, Edda taking samples, occasional trader. | C water-based work; A damaged livelihoods; Water R gradual return. Use correct water-level geometry and keep owl/warp/scarecrow routes open. |
+| `0x57` | `SCENE_LAKE_HYLIA` | **Source:** Vero and Edda at lakeside stops. Sori and further visitors remain planned. | Day: Edda in both eras; Vero as child or after Water Medallion. Night: Edda only with an operating fishing cooperative. |
 | `0x58` | `SCENE_ZORAS_DOMAIN` | Planned: Lethra, Neris, and small Zora households on appropriate ledges and water routes. | C inhabited; frozen A sparse/absent as geometry demands. R return requires actual safe/thawed areas, not the Water Medallion alone. |
 | `0x59` | `SCENE_ZORAS_FOUNTAIN` | Planned: one Zora spring keeper at a safe outer ledge. | C quiet stewardship; A no invented open-water work through ice; later restoration stage must match geometry. Jabu-Jabu and access routes remain clear. |
-| `0x5A` | `SCENE_GERUDO_VALLEY` | Planned: Rasha on the trade approach, Orlen by a future supply stop, one local lookout. | C limited crossing context; A broken bridge and rescue context; R repairs/trade once access is real. Keep bridge and canyon hazards clear. |
+| `0x5A` | `SCENE_GERUDO_VALLEY` | **Source:** Rasha on field-side high ground. Orlen's visit and a lookout remain planned. | Child daytime conversation only. Adult requires all four rescues and membership; Spirit additionally gates trade. Adult night needs an operating caravan partnership. |
 | `0x5B` | `SCENE_LOST_WOODS` | Planned: Tavi at a known safe junction and rare Kokiri gathering visits. | C sparse; A more caution; Forest R limited return. Never mark every exit with helpful crowds or intrude on Skull Kid and trade encounters. |
 | `0x5C` | `SCENE_DESERT_COLOSSUS` | Planned: Suri near a safe outer shrine and a rare Gerudo expedition. | Desert travel stays exceptional; Spirit R cautious visits. No day/night village crowd or obstruction of warp, oasis, bean, and temple routes. |
-| `0x5D` | `SCENE_GERUDOS_FORTRESS` | Planned: Demi, Kesra, Mava, and off-duty workers in authorized common areas. | Respect child/adult access and membership; no friendly actor creates safe passage through the rescue challenge. Night watch replaces daytime trade. |
+| `0x5D` | `SCENE_GERUDOS_FORTRESS` | **Source:** Kesra at a lower common approach. Demi, Mava, and other workers remain planned. | Adult only, after all four rescues and membership. Spirit additionally gates trade; night needs an operating textile workshop. No rescue or patrol override. |
 | `0x5E` | `SCENE_HAUNTED_WASTELAND` | Planned: one Tareh-led caravan rest point only if a safe route is deliberately defined. | Default sparse or zero; no crowd breadcrumb trail, free guide, or override of the original navigation challenge. |
 | `0x5F` | `SCENE_HYRULE_CASTLE` | Planned: Alda or Hadrin in publicly reachable outer work areas. | C day labor outside the stealth route; night sparse. Future P castle workforce needs explicit restored access and geometry. |
 | `0x60` | `SCENE_DEATH_MOUNTAIN_TRAIL` | Planned: Doron and a hauling partner at safe work bays, Iven on the lower road. | C shortage-aware; A reduced labor; Fire R return. No workers in falling-rock zones, narrow climbing lanes, or Biggoron's trade space. |
 | `0x61` | `SCENE_DEATH_MOUNTAIN_CRATER` | Planned: at most a Goron specialist near a proven safe ledge after Fire R. | Hazardous region stays sparse; no ordinary Hylian work crew or actors on heat/warp routes. |
-| `0x62` | `SCENE_GORON_CITY` | Planned: Brakka, Muro, Gorrin, and Rukka with distinct resting/work routines. | C hunger shapes dialogue; A captivity empties worksites; Fire R homecoming. Preserve rolling routes, Darunia, Goron Link, doors, and urn access. |
-| `0x63` | `SCENE_LON_LON_RANCH` | Planned: Nessa, Jory, and Wren doing farm work. | C working ranch; A reflects Ingo's control; later labor changes follow the relevant ranch story. Keep races, horses, fences, and Epona access clear. |
+| `0x62` | `SCENE_GORON_CITY` | **Source:** Doron and Brakka on the main cavern's lower walkway, room 3. Other workers and mountain routes remain planned. | Child or adult after Fire Medallion: both by day; Brakka at night only with an operating kiln. No ordinary workers during adult captivity. |
+| `0x63` | `SCENE_LON_LON_RANCH` | **Source:** Nessa and Wren. Jory, work animations, and indoor relocation remain planned. | Day: Wren in both eras; Nessa as child or after Epona escape. Night: Wren only with an operating dairy. Races and horse access retain their original roles. |
 | `0x64` | `SCENE_OUTSIDE_GANONS_CASTLE` | No added civilian population during the main quest. | Planned P rebuilding belongs to an explicit safe/restored scene state; do not put workers above the abyss or in the bridge sequence. |
 
 ### Debug-only scenes
@@ -315,17 +402,20 @@ or allocation failure should skip an optional resident, not break scene loading.
 
 ### Resident definitions and schedules
 
-A future resident definition should contain a stable resident ID, home region,
-role, visual profile, scene/room/entrance conditions, transform, permitted time
-windows, child/adult/recovery conditions, and dialogue keys. Scene transforms and
-runtime actor IDs are not resident identities and should not be saved as such.
+The current modules define stable resident IDs, visual profiles, explicit scene
+candidates, day/night and story policies, and custom dialogue. Future route and
+interior definitions also need room/entrance conditions and home locations.
+Scene transforms and runtime actor IDs are not resident identities and should
+not be saved as such.
 
-Use `OnSceneSpawnActors` after the original room actor list is spawned. It can run
-again on room loading, so deduplicate by resident ID and room lifetime. Clear
-runtime references on actor destruction and play destruction. Exclude title,
-file-select, debug saves, unsupported adventure modes, and cutscene scene layers.
-Do not spawn during an active transition, blocking story sequence, or before the
-room's collision and resource dependencies are available.
+The current population modules register their own actors and use throttled
+gameplay hooks with scene/room and live-actor checks. Deduplicate by resident ID,
+and defer schedule removal until pending/open conversation has finished.
+`OnSceneSpawnActors` is another available hook for future room-specific work;
+it can run again on room loading. Exclude title, file-select, debug saves,
+unsupported adventure modes, and cutscene scene layers. Do not spawn during an
+active transition, blocking story sequence, or before collision and resource
+dependencies are available.
 
 Shared scenes require more than their scene number: the two bazaars, shooting
 galleries, fountains, grottos, house variants, and the windmill/grave combination
@@ -340,9 +430,9 @@ residents reserved custom text IDs and serve them through `OnOpenText` with
 `CustomMessage::AutoFormat`, `LoadIntoFont`, and `loadFromMessageTable = false`.
 Do not globally replace a vanilla text ID shared by unrelated NPCs.
 
-Initial dialogue can describe the world without writing quest flags. Any later
-property purchase must call the existing validated economy action once, after a
-clear choice, with fresh balance/story checks. Dialogue must not award rupees,
+The shared `TradeDialogue` flow quotes a purchase, repair, or bank amount and
+consumes an explicit choice once, with fresh balance, actor, file, and story
+checks in the engine action. Cancellation changes no money. Dialogue must not award rupees,
 items, recovery flags, or rapport merely because its closing state runs again.
 On initial text opening, `Message_StartTextbox` assigns `msgCtx.talkActor` after
 opening the text; identify the custom text using its own IDs or explicit context,
@@ -367,6 +457,13 @@ placement or gameplay behavior without the owner's acceptance.
 
 ## Source references and next increments
 
+- Current actors: [Kakariko](../soh/soh/Enhancements/living-hyrule/ResidentActor.cpp),
+  [Hylian regional residents](../soh/soh/Enhancements/living-hyrule/WorldResidents.cpp),
+  [Kokiri/Goron](../soh/soh/Enhancements/living-hyrule/ForestMountainResidents.cpp),
+  and [Zora/Gerudo](../soh/soh/Enhancements/living-hyrule/WaterDesertResidents.cpp).
+- [Shared transaction dialogue](../soh/soh/Enhancements/living-hyrule/TradeDialogue.cpp),
+  [decorative supplies](../soh/soh/Enhancements/living-hyrule/PropertyScenery.cpp),
+  and [property rules and contact list](LIVING-HYRULE-PROPERTIES.md).
 - [Actor database API](../soh/soh/ActorDB.h) and
   [implementation](../soh/soh/ActorDB.cpp): additional actor identities.
 - [Actor spawning and NPC talking](../soh/src/code/z_actor.c): lifecycle, room
@@ -385,8 +482,9 @@ placement or gameplay behavior without the owner's acceptance.
 - [Kakariko Cucco anchors](../soh/src/overlays/actors/ovl_En_Niw/z_en_niw.c) and
   [scene-based extra actor example](../soh/soh/Enhancements/QoL/DaytimeGS.cpp).
 
-After the three-resident increment, add Mira and one carefully bounded indoor
-schedule, then a ranch/road connection, then one region-specific actor family at
-a time. Keep worldwide deployment incremental. Paid reconstruction, relationships,
-population growth, business staffing, persistent postgame, Zelda's daily life,
-and castle ownership require their own implemented systems and save design.
+Next work can add Mira as the missing cloth-workshop contact, a carefully bounded
+indoor schedule, and limited walking or work behavior. Keep deployment
+incremental and review the owner's final gameplay feedback before describing
+placements or presentation as accepted. Physical reconstruction, relationships,
+population growth, staffing simulation, broader persistent postgame, Zelda's
+daily life, and castle ownership still require their own systems and save design.

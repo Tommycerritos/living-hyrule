@@ -2,63 +2,73 @@
 
 An optional life and economy expansion for Ocarina of Time, based on
 [HarbourMasters/Shipwright](https://github.com/HarbourMasters/Shipwright).
+The original adventure, required equipment and story progression remain intact.
 
-**Status: banking, a rental cottage, three Kakariko residents, and sixteen regional
-property/business deeds are implemented.** The regional build compiled, linked and was installed successfully. All four
-automated test suites passed; see the [current worklog](docs/LIVING-HYRULE-WORKLOG.md). Gameplay acceptance belongs to the owner. The game is
-not launched automatically.
-The original main quest, dungeons, story items, and progression remain the foundation.
+## Current implementation
 
-The resident branch includes the earlier `feature/living-hyrule-economy` work.
-The three original Kakariko residents reuse character models with individual
-colors, heads, proportions, posture, and conversations. The population design
-covers every scene in the game; the current code places residents only in Kakariko.
+The world-life increment adds actual game actors, conversations and transactions:
 
-## Try the prototype
+- Twenty original residents across ten named locations, using compatible Hylian,
+  Kokiri, Goron, Zora and Gerudo models with individual appearances and dialogue.
+  Their presence follows time of day, local access and the original story.
+- A persistent bank, rental cottage and sixteen regional business deeds. Buy and
+  repair property through participating managers or the ledger; real rupees leave
+  your bank, and operating businesses pay active-play income.
+- Free removal of ruined-market Redeads after the recorded Ganon victory,
+  returning relief workers, and paid reopening of owned adult-era businesses.
+- Supply crates beside seven participating business managers: one while repairs
+  await, three when operating, subject to available safe ground. These are supply
+  markers; building reconstruction and new interiors remain unfinished.
+- Optional double damage from ordinary enemy/boss collision hits and fewer
+  temporary loose hearts, with compatibility checks for existing damage cheats.
 
-1. Load a disposable development save in a normal adventure or Master Quest.
-2. Open the port menu, then **Enhancements > Living Hyrule > Open Living Hyrule**.
-3. Enable the economy for that save file. Deposit or withdraw rupees through the ledger.
-4. Save **1,200 rupees** in the bank, visit Kakariko Village, and buy the cottage.
-5. Save your game normally to keep your bank balance, ownership, and rent progress.
+See the [worklog](docs/LIVING-HYRULE-WORKLOG.md) for the latest build and installed
+executable verification. Code implementation, successful compilation and gameplay
+acceptance are separate milestones. The owner tests finished builds; development
+does not launch the game automatically.
 
-Enable **Additional residents** in the same window to meet **Tavin** the
-carpenter, **Bram** the boot-mender, and **Orlen** the supplier during the day in
-Kakariko. During the adult crisis Bram remains; the other two return after the
-Shadow Medallion. Their dialogue also recognizes cottage ownership. This setting
-is independent of the bank's per-save enable switch. Placement and dialogue
-still require gameplay acceptance.
+## Play the installed development build
 
-The cottage pays **25 rupees per ten minutes of active play** into the bank.
-These prices and rates are provisional tuning. There is no offline rent. Child
-Link can buy and earn rent; Adult Link's property sales and rent remain suspended
-until the Shadow Medallion is obtained. Existing ownership and savings are kept.
-Pausing the economy also preserves balances, ownership, and partial rent progress.
+On the configured workstation, open **C:\ZeldaDev\Launch Living Hyrule.lnk** when
+you are ready. The vanilla installation has its own separate directory.
 
-This first cottage is a ledger entry representing ownership. Tavin discusses the
-listing, while purchases still use the ledger; there is no cottage interior yet.
-The regional property expansion adds sixteen purchasable deeds to the same
-ledger. Visit each region to buy or commission adult-era repairs. Businesses
-pay real bank income, suspend during their region's crisis, and retain ownership
-and timers. See [regional property rules](docs/LIVING-HYRULE-PROPERTIES.md).
-The broader reconstruction visuals, new interiors, regional NPC populations,
-relationships, equipment and kingdom-management systems remain unfinished.
+1. Load a development save in a normal adventure or Master Quest.
+2. Open **Enhancements > Living Hyrule > Open Living Hyrule** in the port menu.
+3. Enable **Additional residents** and enable the economy for that save.
+4. Deposit rupees through the ledger, or speak to Orlen in daytime Kakariko to
+   deposit your wallet. Bram can refill your wallet from the bank.
+5. Speak to a participating property manager. Choose **Yes** and press a fresh
+   A to accept the quoted purchase or repair; **Not now** or B cancels.
+6. Save normally to keep money, deeds, repairs and accumulated income progress.
 
-## Project information
+Tavin sells the **1,200-rupee cottage**, then manages the builders' yard. The
+cottage pays **25 rupees per ten minutes of active play**. Sixteen other deeds
+have their own prices and income. Adult crises suspend trade and income; freeing
+the region and paying for individual repairs restores business operations.
+Ownership survives the age transition. There is no offline income.
 
-- [Living Hyrule changelog](docs/LIVING-HYRULE-CHANGELOG.md)
-- [Population and character design for all 110 scenes](docs/LIVING-HYRULE-POPULATION.md)
-- [Prototype behavior, save architecture, repository policy, and next phases](docs/LIVING-HYRULE.md)
-- [Creative vision (local workstation)](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md)
-- [Windows build and staging helper](tools/living-hyrule/Build.ps1)
-- [Repository safety checks](tools/living-hyrule/check_repository.py)
-- [Official build instructions](docs/BUILDING.md)
-- [Official code-modding guide](docs/MODDING.md)
+The **Dangerous combat and scarce recovery** preference is independent of the
+economy. Infinite Health and other damage overrides take priority, as explained
+in the window. Placed hearts, heart pieces, containers and fairies keep their
+normal rules. The owner's existing cheats are preserved.
 
-Game ROMs, extracted Nintendo assets, runtime data, and build outputs are not
-distributed by this project. Use your own supported local ROM and keep its data
-outside the source checkout.
+## Development and remaining scope
 
-On the configured Windows workstation, the workspace is `C:\ZeldaDev`.
-`living-hyrule` is the integration branch; create `feature/<topic>` branches for
-bounded implementation and review each change before integration.
+Full building restoration, additional interiors, persistent relationships,
+regional stewardship, postgame Zelda/castle life, optional gear and wider encounter
+changes remain in development. The [110-scene population plan](docs/LIVING-HYRULE-POPULATION.md)
+distinguishes current deployments, planned people and intentional exclusions.
+
+- [Feature behavior and save architecture](docs/LIVING-HYRULE.md)
+- [Properties and their managers](docs/LIVING-HYRULE-PROPERTIES.md)
+- [Changelog](docs/LIVING-HYRULE-CHANGELOG.md)
+- [Current build/worklog](docs/LIVING-HYRULE-WORKLOG.md)
+- [Full creative vision on this workstation](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md)
+- [Windows build/staging helper](tools/living-hyrule/Build.ps1)
+- [Native tests](tools/living-hyrule/Test.ps1)
+- [Repository guards](tools/living-hyrule/check_repository.py)
+
+The living-hyrule branch integrates bounded feature branches; develop tracks the
+official upstream. ROMs, extracted Nintendo assets, saves, personal settings,
+backups and builds stay outside Git in C:\ZeldaDev. This repository distributes
+source only, never the user's local game data.

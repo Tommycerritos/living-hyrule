@@ -1,220 +1,163 @@
 # Living Hyrule development
 
-## Current scope
+## Implemented systems
 
-The first playable economy increment is implemented on
-`feature/living-hyrule-economy`. It adds an optional bank account, one Kakariko
-cottage purchase, persistent ownership, and periodic rent. Implementation and
-native automated tests are complete, and the full game compiled and linked
-successfully. Gameplay acceptance is left to the project owner; the new mod has
-not been runtime-playtested.
+Living Hyrule extends a normal Ocarina of Time or Master Quest adventure while
+preserving the main quest. Randomizer and Boss Rush are outside this increment's
+supported scope. The [worklog](LIVING-HYRULE-WORKLOG.md) identifies the last
+successfully installed build; the [changelog](LIVING-HYRULE-CHANGELOG.md) records
+individual stages. No automated gameplay acceptance is claimed.
 
-The original quest, dungeon progression, songs, medallions, spiritual stones, and
-required items must remain intact. The wider life, social, recovery, and post-Ganon
-systems are future work. The creative direction is preserved in the
-[local creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md); the earlier
-[reference design](C:/ZeldaDev/docs/LIVING-HYRULE-REFERENCE.md) is also retained.
+### People and direct trade
 
-The subsequent `feature/living-hyrule-residents` branch adds Tavin, Bram, and Orlen
-as independent Kakariko actors with existing carpenter visuals, individual head
-variants, clothing tints, proportions, and idle posture. They have original
-conversations that recognize age, the Shadow Medallion, and cottage ownership.
-The [population plan](LIVING-HYRULE-POPULATION.md) covers all 110 scene IDs;
-worldwide deployment remains planned.
+Twenty new identities use independent custom actor behavior. Three live in
+Kakariko; nine cover the Market, Hyrule Field, ranch and lake; four use native
+Kokiri/Goron models; four use native Zora/Gerudo models. See the
+[population document](LIVING-HYRULE-POPULATION.md) for exact placement and gates.
+Compatible skeletons, heads, idles and material segments are reused locally;
+original quest actors and shared resource data are not modified.
 
-The **Additional residents** checkbox is a global preference, default off and
-independent of economy state. They appear outdoors by day in normal adventures
-and Master Quest: three during childhood, Bram during the adult crisis, three
-after the Shadow Medallion. They do not appear in cutscene layers. The scheduler
-validates floor and body clearance and checks nearby actors before placing them;
-blocked candidate positions are retried later. No existing actor is moved.
-Placement is provisional until gameplay acceptance. There are no night-time
-indoor schedules in this increment, and NPC conversations do not transact money.
+**Additional residents** is a global preference, independent of each save's
+economy switch. Schedulers check story/access/time conditions, floor, ledges,
+body clearance, nearby actors and duplicate identities. Blocked positions are
+retried. Residents finish active or pending conversations before leaving when a
+shift or setting changes. Existing NPCs and doors are not moved.
 
-## Regional property expansion
+Participating managers quote a bank-funded deed or repair. Tavin first sells the
+cottage, then offers the builders' yard; Orlen deposits wallet rupees; Bram
+withdraws enough savings to fill the wallet. The ledger remains available for all
+properties, including the cloth workshop without a manager in this increment.
 
-The [regional property rules](LIVING-HYRULE-PROPERTIES.md) describe sixteen
-additional deeds, paid adult-era repairs, income and story gates. Source is
-implemented on `feature/living-hyrule-regional-properties`. See the
-[worklog](LIVING-HYRULE-WORKLOG.md) for build/staging verification.
+Each actor freezes its offer and save slot when preparing the conversation.
+Only its own live Yes/No prompt and a fresh A press authorize payment. B, C-up or
+the second choice cancel. The handler consumes a quote before continuing to the
+result textbox. The shared action path rechecks ownership, story, location,
+funds, wallet capacity, current save, dialogue ownership and safe gameplay.
+Ordinary talking is supported without clearing Link's state flags. Pending
+item-putaway conversations retain their quote and actor until the textbox opens.
 
-The persistence payload now writes schema two and migrates schema one without
-changing old savings, cottage ownership or rent. It adds fixed property and
-repair masks, sixteen individual income timers, and lifetime business earnings.
-The enclosing named save section remains version one; older code rejects the
-unknown inner schema and preserves the section instead of rewriting it.
+### Banking, property and recovery
 
-## Using the first prototype
+The bank holds up to 999,999,999 rupees. Transfers require positive amounts,
+sufficient funds, room in the destination and a settled wallet counter. Money
+changes together on the game thread. The cottage costs 1,200 bank rupees and pays
+25 every ten minutes of active play. Its adult trade/rent resumes after Shadow.
 
-Use a disposable development save in a normal adventure or Master Quest. Open
-the port menu, then **Enhancements > Living Hyrule > Open Living Hyrule**. Enable
-the economy separately for each save file. Existing saves without a Living Hyrule
-section begin with an empty, disabled ledger. Randomizer and Boss Rush are outside
-the supported prototype scope.
+[Sixteen additional deeds](LIVING-HYRULE-PROPERTIES.md) cover eight regions, each
+with an independent income timer and repair state. Child ownership persists.
+Adult regional crises suspend operations; the original recovery requirement and
+paid individual repairs reopen businesses. Pausing the economy preserves all
+balances, ownership, repair state and partial timers. Prices remain provisional.
 
-The ledger shows the wallet, bank balance, cottage ownership, time to the next
-rent payment, and total rent earned. Banking is available throughout Hyrule;
-buying the cottage requires being in Kakariko Village. This is a ledger purchase
-representing ownership. Tavin can discuss the listing, but purchases still use
-the ledger. There is no new interior or alteration to an existing building yet.
+Income counts eligible player updates at twenty ticks per second. Dialogue,
+blocking cutscenes, pause screens, transitions, game over, the port menu and
+regional shutdowns stop the relevant timer. There is no offline or seven-year
+windfall. Bank capacity limits actual credits; lifetime earnings saturate safely.
 
-| Rule | Prototype behavior |
-| --- | --- |
-| Cottage price | 1,200 rupees, paid from the bank |
-| Rent | 25 rupees into the bank per ten minutes of active play |
-| Bank limit | 999,999,999 rupees |
-| Wallet | Existing wallet capacity; withdrawals must fit |
-| Child Link | Property purchase and rent are available |
-| Adult Link | Purchase and rent stop until the Shadow Medallion is obtained |
-| Recovery | Ownership and savings survive the crisis; resuming after the Shadow Temple is free in this prototype |
-| Economy pause | Preserves money, ownership, lifetime earnings, and partial rent progress |
+After the game's recorded Ganon victory, enabled Living Hyrule removes the
+ruined Market's Redeads for free, including offscreen ones. Relief residents can
+return, and businesses can be purchased/repaired. The mod does not set the
+completion flag or replace the ending. The surrounding town remains ruined.
 
-Prices and income are provisional tuning, not a finished economic balance.
-There is no offline payout or payment for the seven-year age transition. Rent
-counts eligible player updates at 20 ticks per second, stopping during dialogue,
-blocking cutscenes, pause screens, transitions, game over, the port menu, and
-Kakariko's adult crisis. A completed rent period is consumed even if the bank has
-no room; only rupees actually credited count toward total earnings.
+Property supplies are independent, non-colliding decorative actors anchored to
+seven WorldResidents managers. An owned adult business awaiting repairs shows
+one standard wooden crate; an operating business shows three separate crates.
+At most three arrangements appear per scene, subject to floor, water, wall and
+actor clearance. Leaving traders or invalid/disabled/closed businesses remove
+their supplies. These props add no drops, geometry, doors or ownership flags.
 
-Deposits and withdrawals require a positive amount, sufficient funds, and room
-in the destination. The ledger waits for the game's current rupee-counting
-animation to finish before allowing a transaction. Paused gameplay and unreadable
-ledger data also make its controls unavailable.
+### Combat and recovery supplies
 
-**Save your game normally after making changes.** A transaction does not trigger
-an immediate autosave. The normal full save stores the wallet and Living Hyrule
-state together; quitting or reloading without saving discards subsequent changes
-under the game's usual save rules.
+**Dangerous combat and scarce recovery** is a separate global preference.
+Before an ordinary player update, eligible live enemy/boss collision damage is
+doubled with safe byte saturation. The existing damage path still handles
+shields, Double Defense, fairy revival and death. Falls, burning, grabs, scripted
+damage and enemy health are unchanged. Expiring one-frame invincibility timers
+are evaluated at the engine's actual damage-consumption frame.
 
-## Save architecture and compatibility
+Damage Multiplier, external defense effects, One-hit KO, Infinite Health and
+Permanent Heart Loss take priority. The UI explains conflicts without rewriting
+those settings. No Heart Drops and No Random Drops likewise override filtering.
 
-The economy is a fixed-size, plain C data structure (`LivingHyruleSaveData`) stored
-inline at `SaveContext.ship.livingHyrule`. It contains the enabled flag, bank
-balance, cottage ownership, partial rent ticks, and lifetime credited rent. It
-has no pointers or dynamic containers and remains safe to copy with the game's
-save snapshot.
+Every second eligible temporary, unflagged loose heart is removed before its
+first eligible update. Emergency drops at one heart or less are kept. Placed
+hearts, direct item awards, heart pieces, containers and fairies are excluded.
+The filter consumes no random numbers and clears identity tracking on scene exit.
+This is the first combat increment, not a claim of redesigned enemy intelligence.
 
-`SaveManager` takes a copy of `SaveContext` before its background save work. The
-Living Hyrule save callback reads that snapshot, so a full save captures the
-wallet and ledger from the same point in time. Transfers change the settled
-wallet and bank together on the game thread. The prototype does not persist the
-ledger separately from the wallet or store economy state in global settings.
+## Persistence
 
-The registered custom section is `livingHyrule`, with a stable outer section
-version of **1**. Its `data.economy` payload currently uses inner
-`schemaVersion: 1`. Future economy migrations should dispatch on the inner schema
-while keeping the outer registration stable, unless an engine-level version
-change has been explicitly designed and reviewed.
+**Save normally after transactions.** There is no transaction autosave; quitting
+without saving discards later changes under the game's usual rules.
 
-The save codec validates required fields, boolean types, unsigned integer ranges,
-the bank limit, and rent progress before changing the live state. Unsupported or
-malformed inner economy payloads make the ledger read-only. A small, opt-in
-`SaveManager` fallback handles invalid, empty, or future-version Living Hyrule
-section envelopes the same way. The snapshot-based save condition runs before
-the section's version or data can be rewritten, retaining the unreadable section
-when the rest of the game is saved instead of replacing it with a fresh account.
-Existing saves with no optional section remain valid and opt out by default.
+LivingHyruleSaveData, inline at SaveContext.ship.livingHyrule, is a fixed-size
+plain C structure. It holds the enable flag, bank, cottage, rent ticks/earnings,
+property/repair masks, sixteen business timers and business earnings. It has no
+pointers or dynamic containers and is safe for the engine's copied save snapshot.
+The background save callback reads that snapshot, capturing wallet and ledger
+from the same moment. Global preferences are separate from per-save money.
 
-These paths preserve unsupported data; they do not interpret or migrate an
-unknown format. The registered outer version remains **1**, and unrelated saves
-and sections retain their upstream handling. File-wide malformed JSON or damage
-outside the optional Living Hyrule section still belongs to upstream save
-recovery. Keep development backups when checking save compatibility and rollback.
+The optional named section is livingHyrule, outer version **1**. Its
+data.economy payload uses inner **schemaVersion 2**. Schema one migrates by
+preserving every old balance/ownership/timer and initializing new fields to zero.
+New saves without the section start with an empty, disabled economy.
 
-Implementation is isolated under `soh/soh/Enhancements/living-hyrule`, apart from
-the fixed-size save member in `soh/include/z64save.h`, its C header, and the opt-in
-fallback loader and save condition added to `SaveManager`.
-`RegisterMenuInitFunc` adds the ledger window and sidebar, `RegisterShipInitFunc`
-registers persistence and gameplay hooks, and `OnPlayerUpdate` advances rent only
-when the gameplay conditions above are met. The build's recursive source discovery
-finds the new module without a manual source list.
+The codec validates booleans, integer types/ranges, balances, ownership masks,
+repair subsets and timer invariants before assigning live state. Unknown or
+malformed payloads/envelopes make the ledger read-only. The opt-in SaveManager
+fallback and snapshot save condition preserve the original section when the
+rest of the game saves. Unrelated sections retain upstream behavior; file-wide
+JSON corruption still belongs to upstream recovery.
 
-## Verification and user acceptance
+Resident identities, dialogue state, scenery and heart-drop tracking are transient
+actor/runtime state. This world-life stage does not change the persistent POD.
 
-Native economy-model, save-codec, and population-policy tests passed (three suites).
-The population suite covers 224 combinations of enable, adventure, location,
-scene, daytime, and story-phase conditions. Full-game compilation and linking
-succeeded for the combined economy and resident implementation.
+## Build and verification
 
-The project owner will perform gameplay acceptance. No runtime playtest of the
-new mod is claimed, and further agent playtesting is not part of this handoff.
-The ledger controls, normal save/reload, save-slot separation, NPC placement,
-appearance and dialogue, Child/Adult Link recovery behavior, and original quest progression remain for the owner's
-playthrough. Use a disposable development save when trying the increment. The
-successful automated checks and build establish implementation readiness without
-claiming those gameplay paths have been exercised in the running game.
+Use tools/living-hyrule/Build.ps1 actions Configure, Build and Stage on the
+configured Windows workstation. Never use Run without an explicit user request.
+Test.ps1 builds native policy/codec suites for banking, persistence, regional
+properties, trade confirmation, population, supplies and challenge rules. Full
+engine compilation checks actual hook/actor integration.
 
-## Repository and branches
+Tests and compilation do not verify live rendering, dialogue timing, actor
+placement or final balance. The owner performs the final gameplay checks. Keep
+the last successful runtime until its replacement builds, then compare installed
+and compiled executable hashes. Receipts and logs live outside Git.
 
-- `upstream`: https://github.com/HarbourMasters/Shipwright.git (fetch only).
-- `origin`: https://github.com/Tommycerritos/living-hyrule.git (personal fork).
-- `develop`: untouched official baseline, tracking `upstream/develop`.
-- `living-hyrule`: integration branch for reviewed project changes.
-- `feature/living-hyrule-economy`: current bank and first cottage prototype.
-- `feature/living-hyrule-residents`: three new residents, including the economy branch.
-- `feature/<topic>`: one bounded feature per branch and pull request into `living-hyrule`.
-- `fix/<topic>` and `docs/<topic>`: focused fixes and documentation.
-- `baseline/shipwright-2026-09-14`: pinned original source commit for comparison.
+The engine discovers module sources recursively. Self-registering startup hooks
+connect them to real player, actor, scene, message and save events. The only
+upstream save changes are the POD member and optional load/save preservation
+hooks. Windows metadata copying uses timestamp/size-aware Robocopy without
+mirror/delete flags; other hosts retain the CMake copy fallback.
 
-Fetch upstream explicitly. Review upstream changes, update submodules to their
-recorded revisions, and validate a clean build before merging engine updates.
-Do not automatically rebase published integration history. Release tags should
-identify validated builds; do not commit binaries or package game assets.
+## Source and local data
 
-The starting toolchain and dependency-manager revisions are recorded in
-`docs/LIVING-HYRULE-TOOLCHAIN.json`. To reproduce the dependency setup elsewhere,
-clone Microsoft vcpkg into the external workspace's `tools/vcpkg`, check out the
-recorded commit in detached mode, and bootstrap it before running `Build.ps1`.
-Use `git submodule update --init --recursive` in the source checkout. The installed
-library inventory is recorded locally in `C:\ZeldaDev\docs\dependency-versions.txt`.
+- origin: https://github.com/Tommycerritos/living-hyrule.git (source-only fork).
+- upstream: https://github.com/HarbourMasters/Shipwright.git (fetch only).
+- develop: official baseline; living-hyrule: reviewed integration.
+- feature branches: bounded work; historical branches retain milestones.
+- baseline/shipwright-2026-09-14: starting source revision.
 
-## Local data policy
+Fetch upstream deliberately; review engine changes and recorded submodules before
+integration. Do not automatically rebase published integration history. Toolchain
+revisions are recorded in LIVING-HYRULE-TOOLCHAIN.json; vcpkg and build outputs
+remain external. Source guards run at commit and push and inspect outgoing history.
+On a new clone set core.hooksPath to .githooks and livinghyrule.python to Python.
 
-`C:\ZeldaDev\roms`, `assets`, `runtime`, `build`, and `backups` are outside Git.
-The preserved vanilla copy is a reference; launch a test copy when checking it.
-Development uses its own configuration and saves. Never share ROM-derived O2R/OTR
-archives, extracted game data, or runtime backups.
+C:\ZeldaDev\roms, assets, runtime, build and backups are outside Git.
+Preserve the vanilla installation and keep development saves/settings separate.
+Never share ROM-derived O2R/OTR archives, extracted data or runtime backups.
+Keep upstream asset headers intact. New media need reviewed provenance; file
+extensions alone cannot prove ownership. GitHub Actions remain disabled until
+a source-only workflow is deliberately designed.
 
-Upstream already tracks source asset headers and some project-owned graphics.
-Keep those intact. New graphics/audio/models are blocked by the repository guard
-until their original authorship or license is reviewed and a narrow policy change
-is approved as part of normal development. File extensions cannot prove ownership.
+## Still in development
 
-`.gitignore` prevents ordinary accidental additions. `.githooks/pre-commit` and
-`pre-push` additionally check staged files and outgoing history, including common
-ROM signatures and renamed archives. Git hooks can be bypassed; they are not an
-absolute security boundary. Always review `git diff --cached` before committing.
-On a new clone enable them with `git config core.hooksPath .githooks` and set
-`git config livinghyrule.python <absolute-path-to-python.exe>`.
-
-GitHub Actions are disabled on the fork until a source-only CI design is reviewed.
-Do not copy the upstream asset-upload workflow or register this PC as a public
-self-hosted runner. Later CI may compile source and run synthetic-data tests;
-ROM-dependent playtests remain local.
-
-## Next phases
-
-These systems are planned, not implemented by the economy prototype:
-
-1. **Cottage seller and interaction:** connect the ledger transaction to a
-   physical NPC seller and dialogue, choose the property's location and access,
-   and validate ownership through save/reload without disrupting existing actors
-   or quest dialogue.
-2. **Paid regional reconstruction:** keep the original dungeon or story solution
-   as the first recovery requirement, then add reconstruction paid for by Link.
-   The current free Shadow Temple trade reopening is only the first story link.
-3. **More properties and livelihoods:** homes, shops, businesses, farms, regional
-   price and income tuning, expenses, recovering population, and travelers.
-4. **Rapport and regional influence:** relationships, reputation, tenant treatment,
-   gifts and quests, dialogue consequences, and eventual regional stewardship.
-5. **Persistent postgame:** a safe but ruined Castle Town after Ganondorf, staged
-   restoration, Zelda available in the world, castle life and rapport, and eventual
-   castle ownership that preserves Zelda's place there.
-6. **Equipment and harder combat:** optional regional gear, more dangerous and
-   varied encounters, meaningful healing and preparation costs, and carefully
-   tuned consequences. Original story items and required progression remain intact.
-
-Review each phase's architecture, save migration, compatibility, asset permissions,
-and balance before integrating it. See upstream `docs/MODDING.md` for its code-mod
-workflow. Asset reuse requires permission and attribution; Nintendo assets stay
-on each player's own computer.
+Full building reconstruction and new interiors; broader property coverage and
+balanced expenses; persistent relationships, favors, gifts and rent treatment;
+regional stewardship and treasuries; persistent postgame Zelda and castle life;
+optional regional equipment and more deliberate encounter changes. The full
+[creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md) remains the direction.
+The [population plan](LIVING-HYRULE-POPULATION.md) evaluates all 110 scene IDs,
+including places that should retain solitude, puzzle space or quest atmosphere.

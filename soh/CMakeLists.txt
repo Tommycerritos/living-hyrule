@@ -602,14 +602,18 @@ if (CMAKE_GENERATOR MATCHES "Visual Studio")
     add_custom_command(
     TARGET ${PROJECT_NAME}
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/yml ${CMAKE_BINARY_DIR}/soh/assets
+    COMMAND ${CMAKE_COMMAND} "-DMETADATA_SOURCE=${CMAKE_SOURCE_DIR}/soh/assets/yml"
+        "-DMETADATA_DESTINATION=${CMAKE_BINARY_DIR}/soh/assets"
+        -P "${CMAKE_SOURCE_DIR}/CMake/CopyLivingHyruleMetadata.cmake"
     )
 endif()
 add_custom_command(
     TARGET ${PROJECT_NAME}
     POST_BUILD
     COMMENT "Copying asset ymls..."
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/soh/assets/yml $<TARGET_FILE_DIR:soh>/assets
+    COMMAND ${CMAKE_COMMAND} "-DMETADATA_SOURCE=${CMAKE_SOURCE_DIR}/soh/assets/yml"
+        "-DMETADATA_DESTINATION=$<TARGET_FILE_DIR:soh>/assets"
+        -P "${CMAKE_SOURCE_DIR}/CMake/CopyLivingHyruleMetadata.cmake"
 )
 ################################################################################
 # Dependencies
