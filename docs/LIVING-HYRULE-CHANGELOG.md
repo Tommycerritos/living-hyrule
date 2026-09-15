@@ -1,24 +1,42 @@
 # Living Hyrule changelog
 
-## 2026-09-15 - Relationships and royal audience (source integrated; build pending)
+## 2026-09-15 - Relationships, reconstruction and regional stewardship (schema four; build in progress)
 
-- Added permanent identities and trust for23 residents, ten finite delivery
+- Added permanent identities and trust for 23 residents, ten finite delivery
   favors, an active-favor journal and actor-owned acceptance/handover.
 - Added real fair/high cottage rent, locked current-period terms, trust changes
-  and arrears; trusted managers quote and charge10% less for repairs.
+  and reduced collection when Bram falls behind; trusted managers quote and
+  charge 10% less for repairs.
 - Added frozen conversation topic cycling with native three-choice prompts,
   fresh confirmation, speaker checks and protection against simultaneous movement
   and confirmation input.
 - Added independent postgame Zelda, Captain Aren and Maelin actors on the ruined
   castle approach, with recovery dialogue and shared recorded meetings.
-- Migrated save schemas1/2 to3 while preserving balances, properties, repairs and
-  timers. Added strict social validation and retained unreadable-section protection.
-- Twelve native suites passed. The integrated actor/dialogue/UI translation units
-  passed native engine-header syntax checks. Full linked build and staging remain
-  pending Market restoration integration; the installed checkpoint is still002be29.
+- Added a 25,000-bank-rupee Market square restoration after recorded Ganon victory.
+  Compatible streets and facades appear on re-entry; closed shop fronts and alley
+  barriers preserve the adult setup. Interiors and castle rebuilding are unfinished.
+- Added short walking routines for Pella in the Market and Edda at Lake Hylia,
+  with step-by-step clearance checks and pauses for nearby players or dialogue.
+- Added eight locally purchased clothing dyes, per-save ownership and selection,
+  and draw-local native Link colors in both ages. Existing cosmetic overrides,
+  custom Link models and connected Anchor appearances take priority. Equipment
+  protection and shared palettes are preserved.
+- Added eight regional charters, separate capped treasuries, local bank transfers,
+  once-per-adult-business-period dues, regional greetings and the High Steward of
+  Hyrule title. Charter purchases require recovered, owned and repaired holdings.
+- Added nested wardrobe/stewardship data to the engine's copied save snapshot.
+  Inner schema four migrates schemas one, two and three, preserving all earlier
+  money, deeds, repairs, timers, relationships, favors, rent terms and restoration
+  funding. New modules start empty. The outer section stays version one; strict
+  validation and unreadable/future-section preservation remain in place.
+- **17 of 17 native and local-resource suites passed**, covering the combined
+  increment. Source commit **37efc4bb5** is configured successfully and the full
+  linked game build is in progress. Staging is pending; the last installed
+  checkpoint remains **002be29**.
 
-No game was started. Walking routines, Market geometry and the next wardrobe /
-stewardship increment are being developed separately, not claimed as installed here.
+No game was started. These are completed source changes with automated checks,
+not a claim of installation or gameplay acceptance. Full building/interior/castle
+restoration, wider daily routines and deeper combat remain unfinished.
 
 ## 2026-09-15 - World life, direct trade and combat challenge
 

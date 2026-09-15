@@ -6,7 +6,11 @@ Living Hyrule extends a normal Ocarina of Time or Master Quest adventure while
 preserving the main quest. Randomizer and Boss Rush are outside this increment's
 supported scope. The [worklog](LIVING-HYRULE-WORKLOG.md) identifies the last
 successfully installed build; the [changelog](LIVING-HYRULE-CHANGELOG.md) records
-individual stages. No automated gameplay acceptance is claimed.
+individual stages. The combined schema-four source has passed **17 of 17 native
+and local-resource test suites**. Configuration passed and the full game build
+is in progress; staging is pending. The
+last installed checkpoint remains **002be29**. No game was started, and automated
+checks do not establish gameplay acceptance.
 
 ### People and direct trade
 
@@ -23,6 +27,13 @@ economy switch. Schedulers check story/access/time conditions, floor, ledges,
 body clearance, nearby actors and duplicate identities. Blocked positions are
 retried. Residents finish active or pending conversations before leaving when a
 shift or setting changes. Existing NPCs and doors are not moved.
+
+Pella in the Market and Edda at Lake Hylia now take short walks between two
+nearby stops. Each step checks ground, water, walls and nearby actors. They stop
+for the player, pending/open dialogue, unsafe gameplay or an obstruction; they
+do not navigate around obstacles or move between scenes. Other residents keep
+their established work stops and time/story schedules. Broader routines and
+indoor relocation remain unfinished.
 
 Participating managers quote a bank-funded deed or repair. Tavin first sells the
 cottage, then offers the builders' yard; Orlen deposits wallet rupees; Bram
@@ -41,18 +52,18 @@ item-putaway conversations retain their quote and actor until the textbox opens.
 
 ### Relationships and favors
 
-Twenty-three permanent save identities track meetings and signed trust (-100 to100).
+Twenty-three permanent save identities track meetings and signed trust (-100 to 100).
 Meetings add no points. Ten once-per-save deliveries connect the original twenty
 residents; only one can be carried at a time. Acceptance requires both people to
 be reachable in the current age/story. Delivery requires the recipient's owned
 conversation. The journal can cancel a delivery without a reward; it cannot
-accept or finish one remotely. Successful delivery adds10 trust with both people.
+accept or finish one remotely. Successful delivery adds 10 trust with both people.
 
-A manager trusted at10 or above quotes repairs at90% of the normal price. The
+A manager trusted at 10 or above quotes repairs at 90% of the normal price. The
 engine checks the current price against the frozen quote before charging. A first
-paid repair earns5 trust; repeat repairs are rejected. Fair cottage rent pays25
-and restores1 trust up to20 on a credited period. High rent pays40, costs3 trust,
-and falls to15 when Bram is at-10 or below. Requested terms and current-period
+paid repair earns 5 trust; repeat repairs are rejected. Fair cottage rent pays 25
+and restores 1 trust while Bram is below 20 on a credited period. High rent pays
+40, costs 3 trust, and falls to 15 when Bram is at -10 or below. Requested terms and current-period
 terms are distinct, preventing a last-moment switch from changing a due payment.
 
 The royal audience appears only after the saved Ganon-defeat timestamp: all three
@@ -85,7 +96,16 @@ is authoritative: the generic gameComplete flag also marks custom timer goals
 and resets on loading. A genuine final victory queues one statistics-only save
 after the engine's boss hooks finish. This preserves defeat evidence through
 restart while leaving unsaved wallet, ledger and normal progress alone. The
-original ending remains intact; the surrounding town remains ruined.
+original ending remains intact.
+
+The separate **25,000-rupee Market restoration** can then be funded through
+Hadrin's conversation or the local ledger. On leaving and returning, compatible
+native resources provide restored square streets and building facades while
+preserving the adult scene, original story state and supported exit routes.
+Shop fronts remain closed, alley barriers remain, and no new interiors or
+castle restoration are included. Resource/background compatibility and entrance
+checks can withhold the work; payment is refused if it cannot be prepared safely.
+Funding is per save and requires a normal save to persist.
 
 Property supplies are independent, non-colliding decorative actors anchored to
 seven WorldResidents managers. An owned adult business awaiting repairs shows
@@ -93,6 +113,60 @@ one standard wooden crate; an operating business shows three separate crates.
 At most three arrangements appear per scene, subject to floor, water, wall and
 actor clearance. Leaving traders or invalid/disabled/closed businesses remove
 their supplies. These props add no drops, geometry, doors or ownership flags.
+
+### Regional clothing dyes
+
+Eight dyes can be bought with bank rupees while visiting the matching region
+after its existing trade/recovery gate opens. Once owned, a dye can be selected
+freely anywhere and in either age; original appearance is always available.
+Purchasing does not automatically equip it. These are clothing and hat colors
+on Link's native model, with no new meshes, weapons, shields or resistance effects.
+
+| Region | Dye | Price in bank rupees |
+| --- | --- | ---: |
+| Kokiri Forest | Kokiri fern | 150 |
+| Death Mountain | Goron ember | 600 |
+| Lake and Zora lands | Zora river | 650 |
+| Gerudo lands | Gerudo sand | 800 |
+| Kakariko | Kakariko slate | 450 |
+| Lon Lon Ranch | Lon Lon dusk | 250 |
+| Hyrule Field | Caravan ochre | 300 |
+| Castle Town | Market festival | 1,000 |
+
+The render hook changes a temporary color for the current player or equipment
+preview draw. It does not modify the shared tunic palette, actual equipped tunic,
+protection rules or user CVars. An active tunic cosmetic override, a custom Link
+model or a connected Anchor appearance takes priority; the purchased selection
+is retained and the ledger explains why it is not currently displayed.
+
+### Regional charters and treasuries
+
+In adulthood, own and repair every listed business in a recovered region, then
+visit it to buy its charter. Kakariko also requires the cottage. Castle Town
+requires the funded exterior restoration to be active after leaving and returning.
+Each charter brings a regional title, recognition in resident conversations and
+a separate treasury. Holding all eight grants **High Steward of Hyrule**, also
+recognized by the royal audience.
+
+| Region | Charter price in bank rupees |
+| --- | ---: |
+| Castle Town | 120,000 |
+| Hyrule Field | 35,000 |
+| Lon Lon Ranch | 85,000 |
+| Kokiri Forest | 18,000 |
+| Kakariko | 60,000 |
+| Death Mountain | 65,000 |
+| Lake and Zora lands | 55,000 |
+| Gerudo lands | 95,000 |
+
+An operating adult business credits additional dues equal to 10% of its normal
+period income, rounded down, to its chartered region. This uses the existing
+business period once; it does not reduce bank income or tax cottage rent.
+Treasuries hold up to **99,999,999 rupees per region**. A full bank does not
+prevent dues, but a full treasury consumes the period without a queued payment.
+The ledger transfers funds between the bank and a treasury only while visiting
+that recovered region as an adult. Each transfer conserves money and changes both
+balances together. Charters and balances survive age changes and an economy pause.
 
 ### Combat and recovery supplies
 
@@ -120,21 +194,28 @@ without saving discards later changes under the game's usual rules.
 
 LivingHyruleSaveData, inline at SaveContext.ship.livingHyrule, is a fixed-size
 plain C structure. It holds the enable flag, bank, cottage, rent ticks/earnings,
-property/repair masks, sixteen business timers and business earnings, plus23
+property/repair masks, sixteen business timers and business earnings, plus 23
 signed trust values, meeting/favor masks, one active delivery, locked/requested
-rent terms and Market restoration funding. It has no
+rent terms and Market restoration funding. Nested wardrobe data holds eight
+ownership bits and one equipped style; nested stewardship data holds eight
+charter bits and eight treasury balances. It has no
 pointers or dynamic containers and is safe for the engine's copied save snapshot.
 The background save callback reads that snapshot, capturing wallet and ledger
 from the same moment. Global preferences are separate from per-save money.
 
 The optional named section is livingHyrule, outer version **1**. Its
-data.economy payload uses inner **schemaVersion 3**. Schemas one and two migrate by
-preserving every old balance/ownership/timer and initializing new fields to zero
-and fair rent. The outer section remains version1.
+data.economy payload uses inner **schemaVersion 4**. Schemas one, two and three
+migrate by preserving every field supported by their version, including existing
+social progress, rent terms and restoration funding. New modules start with no
+owned dyes, original clothing, no charters and empty treasuries. Earlier social
+migrations retain neutral trust and fair rent. The outer section remains version 1.
 New saves without the section start with an empty, disabled economy.
 
 The codec validates booleans, integer types/ranges, balances, ownership masks,
-repair subsets and timer invariants before assigning live state. Unknown or
+repair subsets and timer invariants before assigning live state. Schema four
+requires wardrobe/stewardship objects, exactly eight treasury entries, a valid
+owned equipped style and a charter for every nonempty treasury. Unknown optional
+keys within a supported schema are accepted. Future versions or
 malformed payloads/envelopes make the ledger read-only. The opt-in SaveManager
 fallback and snapshot save condition preserve the original section when the
 rest of the game saves. Unrelated sections retain upstream behavior; file-wide
@@ -148,7 +229,8 @@ transient. Permanent social IDs are explicitly mapped from validated actor famil
 Use tools/living-hyrule/Build.ps1 actions Configure, Build and Stage on the
 configured Windows workstation. Never use Run without an explicit user request.
 Test.ps1 builds native policy/codec suites for banking, persistence, regional
-properties, trade confirmation, population, supplies and challenge rules. Full
+properties, relationships, trade confirmation, population, movement, supplies,
+challenge rules, wardrobe, stewardship and local restoration resources. Full
 engine compilation checks actual hook/actor integration.
 
 Tests and compilation do not verify live rendering, dialogue timing, actor
@@ -185,10 +267,11 @@ a source-only workflow is deliberately designed.
 
 ## Still in development
 
-Full building reconstruction and new interiors; broader property coverage and
-balanced expenses; persistent relationships, favors, gifts and rent treatment;
-regional stewardship and treasuries; persistent postgame Zelda and castle life;
-optional regional equipment and more deliberate encounter changes. The full
+Full building reconstruction beyond the Market exterior and new interiors;
+broader property coverage and balanced expenses; gifts and deeper relationships;
+wider walking/work/home routines, staffing and population growth; castle
+ownership, restoration and daily life; new regional equipment models and more
+deliberate combat and encounter behavior. The full
 [creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md) remains the direction.
 The [population plan](LIVING-HYRULE-POPULATION.md) evaluates all 110 scene IDs,
 including places that should retain solitude, puzzle space or quest atmosphere.

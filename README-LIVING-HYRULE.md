@@ -6,7 +6,8 @@ The original adventure, required equipment and story progression remain intact.
 
 ## Current implementation
 
-The world-life increment adds actual game actors, conversations and transactions:
+The current source adds people, property, relationships and local recovery around
+the original adventure:
 
 - Twenty-three residents across eleven named locations, using compatible Hylian,
   Kokiri, Goron, Zora and Gerudo models with individual appearances and dialogue.
@@ -25,13 +26,28 @@ The world-life increment adds actual game actors, conversations and transactions
   and cottage rent choices with real consequences for Bram and the bank.
 - A postgame audience with Zelda, Captain Aren and steward Maelin on the ruined
   castle approach. Their dialogue recognizes the player's recovery work.
+- A funded Market exterior restoration: pay 25,000 bank rupees after Ganon's
+  defeat, then leave and return to see restored streets and facades. Shop
+  interiors, alleys and the castle remain closed or unfinished.
+- Short walking routines for Pella in the Market and Edda at Lake Hylia. They
+  wait when a route is blocked or a conversation needs their attention.
+- Eight purchasable regional cloth dyes for Link's native clothing in both ages.
+  Original equipment protection, custom models and cosmetic settings are preserved.
+- Eight regional charters, local treasury transfers, business dues and resident
+  recognition, culminating in the title **High Steward of Hyrule**.
+
+**Verification:** all **17 native and local-resource test suites passed** for the
+combined schema-four source. Configuration passed and the full game build is in
+progress; staging is pending. The last
+installed checkpoint remains **002be29**; the additions above are not all in that
+executable. No game was started during this implementation pass.
 
 See the [worklog](docs/LIVING-HYRULE-WORKLOG.md) for the latest build and installed
 executable verification. Code implementation, successful compilation and gameplay
 acceptance are separate milestones. The owner tests finished builds; development
 does not launch the game automatically.
 
-## Play the installed development build
+## Using the features after the next staged build
 
 On the configured workstation, use the **Living Hyrule (Modded)** desktop
 shortcut when you are ready. The vanilla installation has its own separate directory.
@@ -46,11 +62,15 @@ shortcut when you are ready. The vanilla installation has its own separate direc
    resident has several topics, **Something else** cycles through them.
 6. Accept a favor from its sender and hand it over to its named recipient. The
    **People and favors** journal keeps the instructions and remembers residents.
-7. Save normally to keep money, deeds, repairs, relationships and current favors.
+7. Use **Regional clothing dyes** to buy a local color and select an owned dye.
+   After recovering a region and owning and repairing all its businesses, visit
+   it to purchase a charter under **Regional stewardship**.
+8. Save normally to keep money, deeds, repairs, relationships, current favors,
+   restoration funding, dyes, charters and treasuries.
 
 Tavin sells the **1,200-rupee cottage**, then manages the builders' yard. The
 cottage pays **25 rupees per ten minutes of active play** on fair terms. High
-rent pays 40 but damages Bram's trust; if he falls behind, collection drops to15.
+rent pays 40 but damages Bram's trust; if he falls behind, collection drops to 15.
 Rent changes start after the current period. Sixteen other deeds
 have their own prices and income. Adult crises suspend trade and income; freeing
 the region and paying for individual repairs restores business operations.
@@ -63,9 +83,9 @@ normal rules. The owner's existing cheats are preserved.
 
 ## Development and remaining scope
 
-Full building restoration, additional interiors, deeper relationships,
-regional stewardship, castle ownership, optional gear and wider encounter
-changes remain in development. The [110-scene population plan](docs/LIVING-HYRULE-POPULATION.md)
+Full building restoration, additional interiors, castle ownership/restoration,
+gifts and deeper relationships, wider daily routines, new equipment models and
+deeper combat changes remain in development. The [110-scene population plan](docs/LIVING-HYRULE-POPULATION.md)
 distinguishes current deployments, planned people and intentional exclusions.
 
 - [Feature behavior and save architecture](docs/LIVING-HYRULE.md)

@@ -11,9 +11,14 @@ entrance, and age variants within a scene still need individual placement work.
 Kakariko module, nine Hylian townsfolk and travelers, four Kokiri/Goron residents,
 and four Zora/Gerudo residents, plus Zelda, Captain Aren and Maelin in a postgame
 royal audience. Shared favors, relationships and rent choices join direct trade.
+Pella and Edda have short walking routines; a funded Market exterior, regional
+cloth dyes and charter recognition are also integrated in the current source.
 The tables headed **Implemented in source** describe that code; they do not
 claim a successful build or gameplay acceptance. The owner will test the final
-playable result. No game launch is part of this implementation pass.
+playable result. All 17 native/local-resource suites and configuration passed;
+the full game build is in progress and staging is pending, with installed
+checkpoint 002be29 retained. No game launch
+is part of this implementation pass.
 
 This remains a small population in selected settlements, not worldwide coverage
 of the 110 scenes. The later cast, interiors, wider walking routes, deeper social
@@ -76,11 +81,15 @@ that a candidate will be placed.
 | Edda | Lakeside research assistant | Daytime; night if the fishing cooperative operates | Remains by day during the water crisis; night if the cooperative operates | Conversation only |
 
 These actors use compatible civilian skeleton/head families with individual
-clothing palettes, proportions, and idle poses. They stand at authored work or
-travel stops; walking journeys and indoor relocation are not implemented.
+clothing palettes, proportions, and idle poses. Pella walks a short Market route
+and Edda walks a short lakeside route; both wait for obstructions and dialogue.
+The other residents keep authored work/travel stops. Journeys between scenes,
+broader work routines and indoor relocation remain unfinished.
 Adult market relief reads the saved final-boss defeat timestamp. Genuine final
 victory records statistics separately so that evidence survives restarting.
-This does not reconstruct the market or automatically save wallet/ledger changes.
+Relief itself does not reconstruct the Market or automatically save wallet/ledger
+changes. A separate 25,000-rupee investment now restores the square's exterior
+on re-entry; shop interiors, alleys and castle rebuilding remain unfinished.
 
 ### Four Kokiri and Gorons
 
@@ -483,9 +492,15 @@ placement or gameplay behavior without the owner's acceptance.
 - [Kakariko Cucco anchors](../soh/src/overlays/actors/ovl_En_Niw/z_en_niw.c) and
   [scene-based extra actor example](../soh/soh/Enhancements/QoL/DaytimeGS.cpp).
 
-Next work can add Mira as the missing cloth-workshop contact, a carefully bounded
-indoor schedule, and limited walking or work behavior. Keep deployment
-incremental and review the owner's final gameplay feedback before describing
-placements or presentation as accepted. Physical reconstruction, relationships,
-population growth, staffing simulation, broader persistent postgame, Zelda's
-daily life, and castle ownership still require their own systems and save design.
+Next work can add Mira as the missing cloth-workshop contact, bounded indoor
+schedules and more walking/work routines beyond Pella and Edda. Existing
+relationships, ten finite favors, rent treatment, Market exterior funding and
+charter recognition are implemented; gifts, deeper social behavior, population
+growth and staffing simulation remain future work. Full building reconstruction,
+new interiors, Zelda's wider daily life and castle ownership/restoration still
+need their own systems and save design. Eight regional dyes change native cloth
+colors; new equipment models and deeper combat also remain unfinished.
+
+Keep deployment incremental and review the owner's final gameplay feedback
+before describing placements or presentation as accepted. The current source's
+17 passing suites do not replace the pending full build, staging or gameplay checks.
