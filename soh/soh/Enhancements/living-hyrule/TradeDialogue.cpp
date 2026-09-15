@@ -1,6 +1,7 @@
 #include "TradeDialogue.h"
 #include "LivingHyrule.h"
 #include "ResidentSocial.h"
+#include "Stewardship.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 
 #include <algorithm>
@@ -131,7 +132,9 @@ std::string DescribeTradeOffer(const TradeOffer& offer) {
 }
 
 std::string DescribeResidentDialogue(Actor* actor, TradeDialogueState& trade, const std::string& introduction) {
-    std::string text = trade.cycled ? std::string{} : introduction + ResidentGreeting(actor);
+    std::string text = trade.cycled
+                           ? std::string{}
+                           : introduction + ResidentGreeting(actor) + StewardshipGreeting(GetSocialResidentId(actor));
     if (trade.offerCount == 0)
         return text;
     if (trade.offerCount == 1)

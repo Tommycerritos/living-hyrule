@@ -160,6 +160,8 @@ inline uint32_t TickBusinesses(EconomyState& state, const WorldProgress& world) 
         const uint32_t payment = room < kProperties[id].income ? static_cast<uint32_t>(room) : kProperties[id].income;
         state.bankRupees += payment;
         credited += payment;
+        if (world.adult)
+            CreditRegionalDues(state.stewardship, static_cast<uint8_t>(kProperties[id].region), kProperties[id].income);
     }
     const uint64_t earningsRoom = (std::numeric_limits<uint64_t>::max)() - state.totalBusinessEarned;
     state.totalBusinessEarned += earningsRoom < credited ? earningsRoom : credited;

@@ -2,6 +2,7 @@
 #include "LivingHyrule.h"
 #include "TradeDialogue.h"
 #include "MarketRestoration.h"
+#include "ResidentMovement.h"
 
 #include "soh/ActorDB.h"
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
@@ -48,6 +49,7 @@ struct WorldResidentActor {
     Vec3s jointTable[kLimbCount];
     Vec3s morphTable[kLimbCount];
     TradeDialogueState trade;
+    ResidentMovementState movement;
     s16 talkState;
     u16 idleTicks;
     bool initialized;
@@ -401,6 +403,7 @@ void InitWorldResident(Actor* actor, PlayState* play) {
 
 void DestroyWorldResident(Actor* actor, PlayState* play) {
     auto* resident = reinterpret_cast<WorldResidentActor*>(actor);
+    ResetResidentMovement(resident->movement);
     if (!resident->initialized)
         return;
     ResourceMgr_UnregisterSkeleton(&resident->skelAnime);
@@ -421,7 +424,12 @@ void UpdateWorldResident(Actor* actor, PlayState* play) {
         Actor_Kill(actor);
         return;
     }
-    SkelAnime_Update(&resident->skelAnime);
+    const auto id = GetWorldResidentId(actor);
+    const auto routine = id == WorldResidentId::Pella  ? ResidentMovementRoutine::Pella
+                         : id == WorldResidentId::Edda ? ResidentMovementRoutine::Edda
+                                                       : ResidentMovementRoutine::None;
+    const bool walking =
+        UpdateResidentMovement(play, actor, resident->movement, routine, &resident->skelAnime, present);
     ++resident->idleTicks;
     Actor_MoveXZGravity(actor);
     Actor_UpdateBgCheckInfo(play, actor, 20.0f, 20.0f, 50.0f, 4);
@@ -432,7 +440,8 @@ void UpdateWorldResident(Actor* actor, PlayState* play) {
         return;
     resident->interactInfo.trackPos = GET_PLAYER(play)->actor.focus.pos;
     Npc_TrackPoint(actor, &resident->interactInfo, 0,
-                   talking                          ? NPC_TRACKING_FULL_BODY
+                   walking                          ? NPC_TRACKING_NONE
+                   : talking                        ? NPC_TRACKING_FULL_BODY
                    : actor->xzDistToPlayer < 180.0f ? NPC_TRACKING_HEAD_AND_TORSO
                                                     : NPC_TRACKING_NONE);
     if (present || resident->talkState != NPC_TALK_STATE_IDLE || requested || reserved) {

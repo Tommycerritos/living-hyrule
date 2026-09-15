@@ -7,6 +7,7 @@
 #include "ResidentSocial.h"
 #include "SocialPolicy.h"
 #include "MarketRestoration.h"
+#include "RegionalWardrobe.h"
 
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Notification/Notification.h"
@@ -78,6 +79,11 @@ static void SaveSave(SaveContext* snapshot, int, bool) {
 
 static bool IsSupportedAdventure() {
     return IS_VANILLA || IS_MASTER_QUEST;
+}
+
+WardrobeState* GetRegionalWardrobeStateForSave() {
+    return GameInteractor::IsSaveLoaded(false) && IsSupportedAdventure() ? &gSaveContext.ship.livingHyrule.wardrobe
+                                                                         : nullptr;
 }
 
 static bool CanPersistVictory(int fileNum) {
@@ -304,6 +310,25 @@ static std::string ApplyAction(Action action, uint32_t amount, const Status& sta
         case Action::AcceptFavor:
         case Action::CompleteFavor:
             return "Speak directly to the resident to accept or hand over a delivery.";
+        case Action::BuyDye:
+        case Action::EquipDye: {
+            if (amount > kRegionalStyleCount || (action == Action::BuyDye && amount == 0))
+                return "That clothing dye is not available.";
+            const auto styleId = static_cast<uint8_t>(amount);
+            const auto result = action == Action::BuyDye ? BuyRegionalStyle(economy, economy.wardrobe, styleId,
+                                                                            status.currentRegion, status.world)
+                                                         : EquipRegionalStyle(economy, economy.wardrobe, styleId);
+            if (result == Result::NotOwned)
+                return "Buy this dye before selecting it.";
+            if (result == Result::AlreadyOwned)
+                return "You already own this clothing dye.";
+            if (result == Result::Unavailable)
+                return "Visit this dye's region after its trade has recovered.";
+            if (result != Result::Success)
+                return ExplainResult(result);
+            return action == Action::BuyDye ? "Dye purchased. Select it in your wardrobe and save to keep it."
+                                            : "Clothing appearance selected. Save to keep this choice.";
+        }
     }
     return "The transaction could not be completed.";
 }
@@ -422,9 +447,18 @@ static void UpdateRent() {
     if (rent != 0) {
         Notification::Emit({ .message = "Kakariko rent: " + std::to_string(rent) + " rupees deposited." });
     }
+    uint64_t treasuryBefore = 0;
+    for (uint64_t balance : economy.stewardship.treasury)
+        treasuryBefore += balance;
     if (const uint32_t income = TickBusinesses(economy, GetWorldProgress()); income != 0) {
         Notification::Emit({ .message = "Business income: " + std::to_string(income) + " rupees deposited." });
     }
+    uint64_t treasuryAfter = 0;
+    for (uint64_t balance : economy.stewardship.treasury)
+        treasuryAfter += balance;
+    if (treasuryAfter > treasuryBefore)
+        Notification::Emit({ .message = "Regional treasuries: " + std::to_string(treasuryAfter - treasuryBefore) +
+                                        " rupees collected." });
 }
 
 static void ClearMarketThreats() {

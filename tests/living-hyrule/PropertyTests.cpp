@@ -111,6 +111,36 @@ int main() {
         CHECK(GetRapport(trusted, manager) == (hasManager ? 15 : 0));
     }
     CHECK(EffectiveRepairPrice(poor, UINT32_MAX) == 0);
+    // Regional dues share the existing period boundary. They cannot arrive
+    // twice, run in childhood/crisis, or queue a backlog behind a full treasury.
+    for (uint32_t id = 0; id < kProperties.size(); ++id) {
+        EconomyState governed{};
+        governed.enabled = 1;
+        governed.ownedProperties = governed.repairedProperties = 1u << id;
+        const auto region = static_cast<uint8_t>(kProperties[id].region);
+        governed.stewardship.charterMask = static_cast<uint8_t>(1u << region);
+        governed.businessFrames[id] = kFramesPerRentPeriod - 1;
+        CHECK(TickBusinesses(governed, recovered) == kProperties[id].income);
+        CHECK(governed.stewardship.treasury[region] == kProperties[id].income / 10u);
+        CHECK(TickBusinesses(governed, recovered) == 0);
+        CHECK(governed.stewardship.treasury[region] == kProperties[id].income / 10u);
+        governed.businessFrames[id] = kFramesPerRentPeriod - 1;
+        const auto before = governed.stewardship.treasury[region];
+        TickBusinesses(governed, child);
+        CHECK(governed.stewardship.treasury[region] == before);
+        governed.businessFrames[id] = kFramesPerRentPeriod - 1;
+        CHECK(TickBusinesses(governed, crisis) == 0);
+        CHECK(governed.businessFrames[id] == kFramesPerRentPeriod - 1);
+        CHECK(governed.stewardship.treasury[region] == before);
+        governed.bankRupees = kBankLimit;
+        governed.stewardship.treasury[region] = kTreasuryLimit - 1;
+        CHECK(TickBusinesses(governed, recovered) == 0);
+        CHECK(governed.stewardship.treasury[region] == kTreasuryLimit);
+        CHECK(governed.businessFrames[id] == 0);
+        --governed.stewardship.treasury[region];
+        CHECK(TickBusinesses(governed, recovered) == 0);
+        CHECK(governed.stewardship.treasury[region] == kTreasuryLimit - 1);
+    }
     poor.rapport[0] = 101;
     CHECK(EffectiveRepairPrice(poor, 0) == 0);
     CHECK(RepairProperty(poor, 0, recovered) == Result::InvalidState);

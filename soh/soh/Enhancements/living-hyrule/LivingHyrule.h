@@ -20,7 +20,9 @@ enum class Action {
     AbandonFavor,
     SetFairRent,
     SetHighRent,
-    RestoreMarket
+    RestoreMarket,
+    BuyDye,
+    EquipDye
 };
 
 struct Status {

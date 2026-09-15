@@ -26,7 +26,11 @@ bool Equal(const EconomyState& a, const EconomyState& b) {
            std::equal(std::begin(a.rapport), std::end(a.rapport), std::begin(b.rapport)) &&
            a.metResidents == b.metResidents && a.completedFavors == b.completedFavors &&
            a.activeFavor == b.activeFavor && a.cottageRentPolicy == b.cottageRentPolicy &&
-           a.currentPeriodPolicy == b.currentPeriodPolicy && a.marketRestored == b.marketRestored;
+           a.currentPeriodPolicy == b.currentPeriodPolicy && a.marketRestored == b.marketRestored &&
+           a.wardrobe.ownedStyles == b.wardrobe.ownedStyles && a.wardrobe.equippedStyle == b.wardrobe.equippedStyle &&
+           a.stewardship.charterMask == b.stewardship.charterMask &&
+           std::equal(std::begin(a.stewardship.treasury), std::end(a.stewardship.treasury),
+                      std::begin(b.stewardship.treasury));
 }
 EconomyState Enabled(uint64_t bank = 0) {
     EconomyState state{};
@@ -42,6 +46,9 @@ template <typename Operation> void Reject(EconomyState& state, Result expected, 
 
 void TestMeetingAndValidation() {
     auto state = Enabled();
+    state.wardrobe = { 0xff, 8 };
+    state.stewardship.charterMask = 0x80;
+    state.stewardship.treasury[7] = kTreasuryLimit;
     static_assert(kSocialResidentCount == 23 && kFavorCount == 10);
     static_assert(static_cast<uint8_t>(ResidentId::Zelda) == 20 && static_cast<uint8_t>(ResidentId::Maelin) == 22);
     for (uint32_t i = 0; i < kSocialResidentCount; ++i) {

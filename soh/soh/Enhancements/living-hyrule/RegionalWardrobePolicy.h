@@ -1,15 +1,12 @@
 #pragma once
 
 #include "Properties.h"
-#include "living_hyrule_wardrobe.h"
+#include "RegionalWardrobeTypes.h"
 #include <array>
 #include <cstdint>
 #include <type_traits>
 
 namespace LivingHyrule {
-
-using WardrobeState = LivingHyruleWardrobeData;
-static_assert(std::is_trivial_v<WardrobeState> && std::is_standard_layout_v<WardrobeState>);
 
 // These identities and their bit positions are permanent once persisted.
 enum class StyleId : uint8_t {
@@ -23,8 +20,6 @@ enum class StyleId : uint8_t {
     Field = 7,
     Market = 8,
 };
-inline constexpr uint8_t kRegionalStyleCount = 8;
-inline constexpr uint16_t kRegionalStyleMask = (1u << kRegionalStyleCount) - 1u;
 
 struct WardrobeColor {
     uint8_t r;
@@ -95,16 +90,6 @@ inline constexpr std::array<RegionalStyle, kRegionalStyleCount> kRegionalStyles 
 
 constexpr const RegionalStyle* GetRegionalStyle(uint8_t id) {
     return id >= 1 && id <= kRegionalStyleCount ? &kRegionalStyles[id - 1] : nullptr;
-}
-constexpr uint16_t RegionalStyleBit(uint8_t id) {
-    return GetRegionalStyle(id) != nullptr ? static_cast<uint16_t>(1u << (id - 1)) : 0;
-}
-inline bool OwnsRegionalStyle(const WardrobeState& state, uint8_t id) {
-    return id == 0 || (state.ownedStyles & RegionalStyleBit(id)) != 0;
-}
-inline bool IsValidWardrobeState(const WardrobeState& state) {
-    return (state.ownedStyles & ~kRegionalStyleMask) == 0 && state.equippedStyle <= kRegionalStyleCount &&
-           OwnsRegionalStyle(state, state.equippedStyle);
 }
 
 // The engine additionally owns the current save, safe transaction moment, and

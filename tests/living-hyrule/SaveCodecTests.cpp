@@ -35,7 +35,12 @@ bool Equal(const EconomyState& left, const EconomyState& right) {
            std::equal(std::begin(left.rapport), std::end(left.rapport), std::begin(right.rapport)) &&
            left.metResidents == right.metResidents && left.completedFavors == right.completedFavors &&
            left.activeFavor == right.activeFavor && left.cottageRentPolicy == right.cottageRentPolicy &&
-           left.currentPeriodPolicy == right.currentPeriodPolicy && left.marketRestored == right.marketRestored;
+           left.currentPeriodPolicy == right.currentPeriodPolicy && left.marketRestored == right.marketRestored &&
+           left.wardrobe.ownedStyles == right.wardrobe.ownedStyles &&
+           left.wardrobe.equippedStyle == right.wardrobe.equippedStyle &&
+           left.stewardship.charterMask == right.stewardship.charterMask &&
+           std::equal(std::begin(left.stewardship.treasury), std::end(left.stewardship.treasury),
+                      std::begin(right.stewardship.treasury));
 }
 
 EconomyState Holdings(bool enabled = true) {
@@ -67,23 +72,39 @@ EconomyState SocialHoldings(bool enabled = true) {
     return state;
 }
 
+EconomyState RegionalHoldings(bool enabled = true) {
+    auto state = SocialHoldings(enabled);
+    state.wardrobe = { 0xff, 8 };
+    state.stewardship.charterMask = 0xff;
+    for (uint8_t i = 0; i < LivingHyrule::kStewardshipRegionCount; ++i)
+        state.stewardship.treasury[i] = i * 7919;
+    state.stewardship.treasury[7] = LivingHyrule::kTreasuryLimit;
+    return state;
+}
+
 void Reject(const json& data, const std::string& description) {
-    EconomyState output = SocialHoldings(false);
+    EconomyState output = RegionalHoldings(false);
     const EconomyState original = output;
     Check(!DecodeEconomy(data, output), description + " is rejected");
     Check(Equal(output, original), description + " leaves output unchanged");
 }
 
 void TestRoundTrips() {
-    for (const EconomyState state :
-         { EconomyState{}, Holdings(), Holdings(false), SocialHoldings(), SocialHoldings(false) }) {
+    for (const EconomyState state : { EconomyState{}, Holdings(), Holdings(false), SocialHoldings(),
+                                      SocialHoldings(false), RegionalHoldings(), RegionalHoldings(false) }) {
         Check(LivingHyrule::IsValidState(state), "round-trip fixture is valid");
         const json encoded = EncodeEconomy(state);
-        Check(encoded.is_object() && encoded.size() == 17, "encoding has exactly seventeen fields");
+        Check(encoded.is_object() && encoded.size() == 19, "encoding has exactly nineteen fields");
         Check(encoded.at("enabled").is_boolean(), "enabled encodes as JSON boolean");
         Check(encoded.at("ownsKakarikoCottage").is_boolean(), "ownership encodes as JSON boolean");
-        Check(encoded.at("schemaVersion") == 3, "encoding uses schema version three");
+        Check(encoded.at("schemaVersion") == 4, "encoding uses schema version four");
         Check(encoded.at("marketRestored").is_boolean(), "restoration encodes as a JSON boolean");
+        Check(encoded.at("wardrobe").is_object() && encoded.at("wardrobe").size() == 2,
+              "wardrobe encodes as its two-field object");
+        Check(encoded.at("stewardship").is_object() && encoded.at("stewardship").size() == 2 &&
+                  encoded.at("stewardship").at("treasury").is_array() &&
+                  encoded.at("stewardship").at("treasury").size() == 8,
+              "stewardship encodes as an object with eight treasury entries");
         EconomyState decoded{};
         Check(DecodeEconomy(json::parse(encoded.dump()), decoded), "serialized round trip succeeds");
         Check(Equal(state, decoded), "round trip preserves every field, including full-width rent total");
@@ -113,7 +134,8 @@ void TestMalformedData() {
     for (const char* name :
          { "schemaVersion", "enabled", "bankRupees", "ownsKakarikoCottage", "rentalFrames", "totalRentEarned",
            "ownedProperties", "repairedProperties", "businessFrames", "totalBusinessEarned", "rapport", "metResidents",
-           "completedFavors", "activeFavor", "cottageRentPolicy", "currentPeriodPolicy", "marketRestored" }) {
+           "completedFavors", "activeFavor", "cottageRentPolicy", "currentPeriodPolicy", "marketRestored", "wardrobe",
+           "stewardship" }) {
         json missing = valid;
         missing.erase(name);
         Reject(missing, std::string("missing ") + name);
@@ -140,7 +162,7 @@ void TestMalformedData() {
         }
     }
 
-    for (const uint64_t version : { uint64_t{ 0 }, uint64_t{ 4 }, (std::numeric_limits<uint64_t>::max)() }) {
+    for (const uint64_t version : { uint64_t{ 0 }, uint64_t{ 5 }, (std::numeric_limits<uint64_t>::max)() }) {
         json unsupported = valid;
         unsupported["schemaVersion"] = version;
         Reject(unsupported, "unsupported schema version " + std::to_string(version));
@@ -193,7 +215,7 @@ void TestSocialPersistenceAndMigration() {
         auto output = SocialHoldings();
         Check(DecodeEconomy(json::parse(legacy.dump()), output), "older schema migrates to social format");
         Check(Equal(output, expected), "migration preserves assets and disables every newly added feature");
-        Check(EncodeEconomy(output)["schemaVersion"] == 3, "migrated output writes schema three");
+        Check(EncodeEconomy(output)["schemaVersion"] == 4, "migrated output writes schema four");
     }
     const auto valid = EncodeEconomy(portfolio);
     for (const json& bad : { json(), json::object(), json(23), json::array(), json::array({ 0 }),
@@ -242,6 +264,166 @@ void TestSocialPersistenceAndMigration() {
     Check(threw, "social invalid state cannot be encoded");
 }
 
+void TestRegionalMigrationAndSnapshots() {
+    const auto original = RegionalHoldings(false);
+    for (int version : { 1, 2, 3 }) {
+        auto legacy = EncodeEconomy(original);
+        legacy["schemaVersion"] = version;
+        legacy.erase("wardrobe");
+        legacy.erase("stewardship");
+        auto expected = original;
+        expected.wardrobe = {};
+        expected.stewardship = {};
+        if (version < 3) {
+            for (const char* key : { "rapport", "metResidents", "completedFavors", "activeFavor", "cottageRentPolicy",
+                                     "currentPeriodPolicy", "marketRestored" })
+                legacy.erase(key);
+            std::fill(std::begin(expected.rapport), std::end(expected.rapport), int8_t{ 0 });
+            expected.metResidents = 0;
+            expected.completedFavors = 0;
+            expected.activeFavor = 0;
+            expected.cottageRentPolicy = 0;
+            expected.currentPeriodPolicy = 0;
+            expected.marketRestored = 0;
+        }
+        if (version == 1) {
+            for (const char* key : { "ownedProperties", "repairedProperties", "businessFrames", "totalBusinessEarned" })
+                legacy.erase(key);
+            expected = Holdings(false);
+        }
+        auto output = RegionalHoldings();
+        Check(DecodeEconomy(json::parse(legacy.dump()), output),
+              "schema " + std::to_string(version) + " migrates to four");
+        Check(Equal(output, expected), "migration retains every previous field and clears only added modules");
+        Check(EncodeEconomy(output)["schemaVersion"] == 4, "migrated regional snapshot writes schema four");
+
+        // Unknown optional fields in older schemas are never misinterpreted as
+        // a later schema's authoritative module, even if their shape differs.
+        legacy["wardrobe"] = "an unrelated old extension";
+        legacy["stewardship"] = true;
+        output = RegionalHoldings();
+        Check(DecodeEconomy(legacy, output) && Equal(output, expected), "legacy extensions do not invent new assets");
+    }
+    for (uint8_t requested = 0; requested < 2; ++requested) {
+        for (uint8_t locked = 0; locked < 2; ++locked) {
+            auto expected = SocialHoldings(false);
+            expected.cottageRentPolicy = requested;
+            expected.currentPeriodPolicy = locked;
+            auto legacy = EncodeEconomy(expected);
+            legacy["schemaVersion"] = 3;
+            legacy.erase("wardrobe");
+            legacy.erase("stewardship");
+            auto output = RegionalHoldings();
+            Check(DecodeEconomy(legacy, output) && Equal(output, expected),
+                  "schema three preserves separately requested and locked rent terms");
+        }
+    }
+
+    auto live = RegionalHoldings();
+    const auto snapshot = live;
+    live.bankRupees += 55;
+    live.wardrobe.ownedStyles = 1;
+    live.wardrobe.equippedStyle = 1;
+    live.stewardship.treasury[7] = 0;
+    live.stewardship.charterMask &= 0x7f;
+    EconomyState loaded{};
+    Check(DecodeEconomy(json::parse(EncodeEconomy(snapshot).dump()), loaded), "copied regional snapshot decodes");
+    Check(Equal(loaded, snapshot) && !Equal(loaded, live), "later live mutations cannot change copied save assets");
+    const EconomyState emptyFile{};
+    Check(DecodeEconomy(EncodeEconomy(emptyFile), loaded) && Equal(loaded, emptyFile),
+          "new slot has no inherited assets");
+
+    auto extended = EncodeEconomy(original);
+    extended["wardrobe"]["futureOptional"] = json::array({ true, "color" });
+    extended["stewardship"]["futureOptional"] = { { "note", "retained by future schema" } };
+    Check(DecodeEconomy(extended, loaded) && Equal(loaded, original),
+          "current nested objects accept unknown optional keys");
+
+    auto signedValues = EncodeEconomy(original);
+    signedValues["wardrobe"]["ownedStyles"] = int64_t{ 255 };
+    signedValues["wardrobe"]["equippedStyle"] = int64_t{ 8 };
+    signedValues["stewardship"]["charterMask"] = int64_t{ 255 };
+    signedValues["stewardship"]["treasury"][7] = static_cast<int64_t>(LivingHyrule::kTreasuryLimit);
+    Check(DecodeEconomy(signedValues, loaded) && Equal(loaded, original),
+          "bounded nonnegative signed module integers decode");
+}
+
+void TestRegionalMalformedData() {
+    const auto valid = EncodeEconomy(RegionalHoldings());
+    for (const char* key : { "wardrobe", "stewardship" }) {
+        for (const json& bad :
+             { json(), json::array(), json::object(), json(1), json(1.0), json(true), json("object") }) {
+            auto malformed = valid;
+            malformed[key] = bad;
+            Reject(malformed, std::string(key) + " malformed object");
+        }
+    }
+    for (const auto& field : std::vector<std::pair<const char*, const char*>>{ { "wardrobe", "ownedStyles" },
+                                                                               { "wardrobe", "equippedStyle" },
+                                                                               { "stewardship", "charterMask" },
+                                                                               { "stewardship", "treasury" } }) {
+        auto malformed = valid;
+        malformed[field.first].erase(field.second);
+        Reject(malformed, std::string("missing nested ") + field.first + "." + field.second);
+    }
+    for (const char* path : { "/wardrobe/ownedStyles", "/wardrobe/equippedStyle", "/stewardship/charterMask",
+                              "/stewardship/treasury/0", "/stewardship/treasury/7" }) {
+        for (const json& bad :
+             { json(-1), json(INT64_MIN), json(0.0), json(1.0), json(1.5), json("1"), json(true), json(), json::array(),
+               json::object(), json::parse("18446744073709551616"), json::parse("-18446744073709551616") }) {
+            auto malformed = valid;
+            malformed[json::json_pointer(path)] = bad;
+            Reject(malformed, std::string("invalid nested integer ") + path + "=" + bad.dump());
+        }
+    }
+    for (const json& bad : { json(), json::object(), json(true), json("treasury"), json(8), json::array(),
+                             json(std::vector<uint64_t>(7, 0)), json(std::vector<uint64_t>(9, 0)) }) {
+        auto malformed = valid;
+        malformed["stewardship"]["treasury"] = bad;
+        Reject(malformed, "treasury requires exactly eight integer entries");
+    }
+    for (uint8_t index = 0; index < LivingHyrule::kStewardshipRegionCount; ++index) {
+        for (uint64_t bad : { LivingHyrule::kTreasuryLimit + 1, UINT64_MAX }) {
+            auto malformed = valid;
+            malformed["stewardship"]["treasury"][index] = bad;
+            Reject(malformed, "treasury element exceeds regional limit");
+        }
+        auto malformed = valid;
+        malformed["stewardship"]["charterMask"] = 0xffu & ~(1u << index);
+        malformed["stewardship"]["treasury"][index] = 1;
+        Reject(malformed, "treasury funds require their regional charter");
+    }
+    for (const auto& field :
+         std::vector<std::pair<const char*, uint64_t>>{ { "/wardrobe/ownedStyles", 256 },
+                                                        { "/wardrobe/ownedStyles", 65536 },
+                                                        { "/wardrobe/equippedStyle", 9 },
+                                                        { "/wardrobe/equippedStyle", 256 },
+                                                        { "/stewardship/charterMask", 256 },
+                                                        { "/wardrobe/ownedStyles", UINT64_MAX },
+                                                        { "/wardrobe/equippedStyle", UINT64_MAX },
+                                                        { "/stewardship/charterMask", UINT64_MAX } }) {
+        auto malformed = valid;
+        malformed[json::json_pointer(field.first)] = field.second;
+        Reject(malformed, "module integer exceeds storage or semantic limit");
+    }
+    auto malformed = valid;
+    malformed["wardrobe"]["ownedStyles"] = 1;
+    Reject(malformed, "equipped dye must be owned");
+
+    for (int module = 0; module < 2; ++module) {
+        auto invalid = RegionalHoldings();
+        if (module == 0)
+            invalid.wardrobe.equippedStyle = 9;
+        else
+            invalid.stewardship.treasury[7] = LivingHyrule::kTreasuryLimit + 1;
+        bool threw = false;
+        try {
+            (void)EncodeEconomy(invalid);
+        } catch (const std::invalid_argument&) { threw = true; }
+        Check(threw, "encoding refuses invalid nested assets");
+    }
+}
+
 } // namespace
 
 int main() {
@@ -249,6 +431,8 @@ int main() {
         TestRoundTrips();
         TestMalformedData();
         TestSocialPersistenceAndMigration();
+        TestRegionalMigrationAndSnapshots();
+        TestRegionalMalformedData();
         auto legacy = EncodeEconomy(Holdings());
         legacy["schemaVersion"] = 1;
         for (const char* key : { "ownedProperties", "repairedProperties", "businessFrames", "totalBusinessEarned" })

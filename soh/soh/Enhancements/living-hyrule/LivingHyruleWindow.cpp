@@ -2,6 +2,8 @@
 #include "ChallengeMode.h"
 #include "SocialPolicy.h"
 #include "MarketRestoration.h"
+#include "RegionalWardrobe.h"
+#include "Stewardship.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -39,6 +41,7 @@ class LivingHyruleWindow final : public Ship::GuiWindow {
     void DrawProperties(Status& status);
     void DrawJournal(Status& status);
     void DrawRestoration(Status& status);
+    void DrawWardrobe(Status& status);
 
     int mAmount = 10;
     int mLastFileNum = -2;
@@ -269,6 +272,43 @@ void LivingHyruleWindow::DrawRestoration(Status& status) {
                        "keeps watch overnight, and Maelin records the kingdom's working livelihoods.");
 }
 
+void LivingHyruleWindow::DrawWardrobe(Status& status) {
+    ImGui::Separator();
+    if (!ImGui::CollapsingHeader("Regional clothing dyes"))
+        return;
+    ImGui::TextWrapped(
+        "Buy local cloth colors while visiting their region, then switch freely between owned "
+        "dyes. They color Link's native clothing and hat in both ages. Equipment protection stays the same.");
+    ImGui::TextWrapped("%s", RegionalWardrobeVisualStatusText(GetRegionalWardrobeVisualStatus()));
+    DrawActionButton("Use original appearance", Action::EquipDye, 0,
+                     !status.economy.enabled || status.economy.wardrobe.equippedStyle == 0, status);
+    ImGui::TextWrapped(
+        "Existing custom Link models, tunic cosmetic colors and connected Anchor appearances take priority.");
+    for (const auto& style : kRegionalStyles) {
+        const auto id = static_cast<uint8_t>(style.id);
+        ImGui::PushID(1000 + static_cast<int>(id));
+        const ImVec4 color(style.color.r / 255.0f, style.color.g / 255.0f, style.color.b / 255.0f, 1.0f);
+        ImGui::ColorButton("Cloth color", color, ImGuiColorEditFlags_NoTooltip, ImVec2(18.0f, 18.0f));
+        ImGui::SameLine();
+        ImGui::TextUnformatted(style.name);
+        ImGui::TextWrapped("%s", style.description);
+        if (OwnsRegionalStyle(status.economy.wardrobe, id)) {
+            if (status.economy.wardrobe.equippedStyle == id)
+                ImGui::TextUnformatted("Selected");
+            else
+                DrawActionButton("Wear this color", Action::EquipDye, id, !status.economy.enabled, status);
+        } else {
+            ImGui::Text("%u bank rupees | %s", style.price, kRegionNames[static_cast<uint8_t>(style.region)]);
+            DrawActionButton("Buy dye", Action::BuyDye, id,
+                             !status.economy.enabled || status.currentRegion != style.region ||
+                                 !RegionOpen(style.region, status.world) || status.economy.bankRupees < style.price,
+                             status);
+        }
+        ImGui::Spacing();
+        ImGui::PopID();
+    }
+}
+
 void LivingHyruleWindow::DrawElement() {
     Status status = GetStatus();
     if (status.fileNum != mLastFileNum) {
@@ -315,6 +355,8 @@ void LivingHyruleWindow::DrawElement() {
     DrawJournal(status);
     DrawProperties(status);
     DrawRestoration(status);
+    DrawWardrobe(status);
+    DrawStewardshipControls(status);
 
     ImGui::Separator();
     ImGui::TextWrapped("Save your game normally to keep your bank balance, deeds, repairs, relationships and favors.");

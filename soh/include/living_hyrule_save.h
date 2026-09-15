@@ -2,6 +2,8 @@
 #define LIVING_HYRULE_SAVE_H
 
 #include <stdint.h>
+#include "living_hyrule_wardrobe.h"
+#include "living_hyrule_stewardship.h"
 
 /* Fixed-size data travels with SaveManager's copy of the game save. */
 typedef struct {
@@ -21,6 +23,8 @@ typedef struct {
     uint8_t cottageRentPolicy;   /* Requested next-period terms: 0 fair, 1 high. */
     uint8_t currentPeriodPolicy; /* Terms locked for the current rent period. */
     uint8_t marketRestored;
+    LivingHyruleWardrobeData wardrobe;
+    LivingHyruleStewardshipData stewardship;
 } LivingHyruleSaveData;
 
 #endif

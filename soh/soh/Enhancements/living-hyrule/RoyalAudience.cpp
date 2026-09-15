@@ -1,6 +1,7 @@
 #include "RoyalAudience.h"
 #include "LivingHyrule.h"
 #include "ResidentSocial.h"
+#include "Stewardship.h"
 
 #include "soh/ActorDB.h"
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
@@ -159,7 +160,8 @@ void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
     Actor* speaker =
         gPlayState != nullptr && GET_PLAYER(gPlayState) != nullptr ? GET_PLAYER(gPlayState)->talkActor : nullptr;
     CustomMessage message(IsRoyalResidentActor(speaker) && GetRoyalResidentId(speaker) == id
-                              ? BuildDialogue(id) + ResidentGreeting(speaker)
+                              ? BuildDialogue(id) + ResidentGreeting(speaker) +
+                                    StewardshipGreeting(GetSocialResidentId(speaker))
                               : "Let's speak again in a moment.");
     message.AutoFormat();
     message.LoadIntoFont();

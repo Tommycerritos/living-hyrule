@@ -58,7 +58,7 @@ inline nlohmann::json EncodeEconomy(const EconomyState& state) {
     }
 
     return {
-        { "schemaVersion", 3 },
+        { "schemaVersion", 4 },
         { "enabled", state.enabled != 0 },
         { "bankRupees", state.bankRupees },
         { "ownsKakarikoCottage", state.ownsKakarikoCottage != 0 },
@@ -75,6 +75,10 @@ inline nlohmann::json EncodeEconomy(const EconomyState& state) {
         { "cottageRentPolicy", state.cottageRentPolicy },
         { "currentPeriodPolicy", state.currentPeriodPolicy },
         { "marketRestored", state.marketRestored != 0 },
+        { "wardrobe",
+          { { "ownedStyles", state.wardrobe.ownedStyles }, { "equippedStyle", state.wardrobe.equippedStyle } } },
+        { "stewardship",
+          { { "charterMask", state.stewardship.charterMask }, { "treasury", state.stewardship.treasury } } },
     };
 }
 
@@ -92,7 +96,7 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
 
         uint64_t schemaVersion = 0;
         if (!SaveCodecDetail::ReadUnsigned(data.at("schemaVersion"), schemaVersion) ||
-            (schemaVersion != 1 && schemaVersion != 2 && schemaVersion != 3) || !data.at("enabled").is_boolean() ||
+            (schemaVersion < 1 || schemaVersion > 4) || !data.at("enabled").is_boolean() ||
             !data.at("ownsKakarikoCottage").is_boolean()) {
             return false;
         }
@@ -136,6 +140,24 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
                 return false;
             for (uint32_t i = 0; i < kSocialResidentCount; ++i) {
                 if (!SaveCodecDetail::ReadRapport(rapport[i], candidate.rapport[i]))
+                    return false;
+            }
+        }
+        // Schema four embeds both modules in the same copied save snapshot.
+        // Older files receive original clothing and no charters or treasury.
+        if (schemaVersion >= 4) {
+            const auto& wardrobe = data.at("wardrobe");
+            const auto& stewardship = data.at("stewardship");
+            if (!wardrobe.is_object() || !stewardship.is_object() ||
+                !SaveCodecDetail::ReadUnsigned(wardrobe.at("ownedStyles"), candidate.wardrobe.ownedStyles) ||
+                !SaveCodecDetail::ReadUnsigned(wardrobe.at("equippedStyle"), candidate.wardrobe.equippedStyle) ||
+                !SaveCodecDetail::ReadUnsigned(stewardship.at("charterMask"), candidate.stewardship.charterMask))
+                return false;
+            const auto& treasury = stewardship.at("treasury");
+            if (!treasury.is_array() || treasury.size() != kStewardshipRegionCount)
+                return false;
+            for (uint8_t region = 0; region < kStewardshipRegionCount; ++region) {
+                if (!SaveCodecDetail::ReadUnsigned(treasury[region], candidate.stewardship.treasury[region]))
                     return false;
             }
         }

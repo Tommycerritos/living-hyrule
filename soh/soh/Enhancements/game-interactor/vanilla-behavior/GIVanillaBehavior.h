@@ -3482,8 +3482,11 @@ typedef enum {
     // true
     // ```
     // #### `args`
-    // - `*Player`
-    // - `*Color_RGB8`
+    // - `void* drawData`: Player in gameplay; equipment array in the pause preview
+    // - `Color_RGB8*`: draw-local color copy, never the shared default palette
+    // - `PlayState*`
+    // - `s32 tunic`: PLAYER_TUNIC_* index
+    // - `s32 pausePreview`: nonzero for the equipment preview
     VB_APPLY_TUNIC_COLOR,
 
     // #### `result`

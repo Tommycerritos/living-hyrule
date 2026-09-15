@@ -94,7 +94,7 @@ else()
 endif()
 add_test(NAME living_hyrule_world_population_tests COMMAND living_hyrule_world_population_tests)
 
-foreach(suite IN ITEMS Scenery ForestMountain WaterDesert Social RoyalAudience MarketRestoration)
+foreach(suite IN ITEMS Scenery ForestMountain WaterDesert Social RoyalAudience MarketRestoration Movement RegionalWardrobe Stewardship)
     string(TOLOWER "${suite}" suite_lower)
     set(target_name "living_hyrule_${suite_lower}_tests")
     add_executable(${target_name} "${suite}Tests.cpp")

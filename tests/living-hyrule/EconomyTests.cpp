@@ -30,7 +30,11 @@ bool Equal(const EconomyState& a, const EconomyState& b) {
            std::equal(std::begin(a.rapport), std::end(a.rapport), std::begin(b.rapport)) &&
            a.metResidents == b.metResidents && a.completedFavors == b.completedFavors &&
            a.activeFavor == b.activeFavor && a.cottageRentPolicy == b.cottageRentPolicy &&
-           a.currentPeriodPolicy == b.currentPeriodPolicy && a.marketRestored == b.marketRestored;
+           a.currentPeriodPolicy == b.currentPeriodPolicy && a.marketRestored == b.marketRestored &&
+           a.wardrobe.ownedStyles == b.wardrobe.ownedStyles && a.wardrobe.equippedStyle == b.wardrobe.equippedStyle &&
+           a.stewardship.charterMask == b.stewardship.charterMask &&
+           std::equal(std::begin(a.stewardship.treasury), std::end(a.stewardship.treasury),
+                      std::begin(b.stewardship.treasury));
 }
 
 EconomyState Enabled(uint64_t bank = 0) {
@@ -74,8 +78,11 @@ void TestValidationAndAtomicFailures() {
         RejectTransfer(operation, Enabled(500), 100, 99, 1, Result::InvalidWallet);
     }
 
-    for (int invalidField = 0; invalidField < 4; ++invalidField) {
+    for (int invalidField = 0; invalidField < 9; ++invalidField) {
         EconomyState corrupt = Enabled(5000);
+        corrupt.wardrobe = { 0xff, 8 };
+        corrupt.stewardship.charterMask = 1;
+        corrupt.stewardship.treasury[0] = kTreasuryLimit;
         switch (invalidField) {
             case 0:
                 corrupt.enabled = 2;
@@ -88,6 +95,21 @@ void TestValidationAndAtomicFailures() {
                 break;
             case 3:
                 corrupt.rentalFrames = kFramesPerRentPeriod;
+                break;
+            case 4:
+                corrupt.wardrobe.ownedStyles = 0x100;
+                break;
+            case 5:
+                corrupt.wardrobe.equippedStyle = 9;
+                break;
+            case 6:
+                corrupt.wardrobe.ownedStyles = 1;
+                break;
+            case 7:
+                corrupt.stewardship.treasury[0] = kTreasuryLimit + 1;
+                break;
+            case 8:
+                corrupt.stewardship.treasury[7] = 1;
                 break;
         }
         CHECK(!IsValidState(corrupt));
@@ -165,6 +187,10 @@ void TestPurchaseAndRent() {
 void TestReloadAndFileIsolation() {
     EconomyState firstFile = Enabled(kCottagePrice);
     CHECK(BuyCottage(firstFile) == Result::Success);
+    firstFile.wardrobe = { 0xa5, 8 };
+    firstFile.stewardship.charterMask = 0x81;
+    firstFile.stewardship.treasury[0] = 125;
+    firstFile.stewardship.treasury[7] = kTreasuryLimit;
     for (int frame = 0; frame < 4000; ++frame) {
         CHECK(TickRent(firstFile) == 0);
     }
@@ -174,6 +200,10 @@ void TestReloadAndFileIsolation() {
     EconomyState reloaded{};
     std::memcpy(&reloaded, &firstFile, sizeof(reloaded));
     CHECK(Equal(firstFile, reloaded));
+    reloaded.wardrobe.equippedStyle = 1;
+    reloaded.stewardship.treasury[0] += 100;
+    CHECK(firstFile.wardrobe.equippedStyle == 8 && firstFile.stewardship.treasury[0] == 125);
+    CHECK(reloaded.wardrobe.ownedStyles == 0xa5 && reloaded.stewardship.treasury[7] == kTreasuryLimit);
     for (int frame = 0; frame < 7999; ++frame) {
         CHECK(TickRent(reloaded) == 0);
     }
