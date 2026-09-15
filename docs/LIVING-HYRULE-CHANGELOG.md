@@ -1,6 +1,6 @@
 # Living Hyrule changelog
 
-## 2026-09-15 - Relationships, reconstruction and regional stewardship (schema four; build in progress)
+## 2026-09-15 - Relationships, reconstruction and regional stewardship (schema four; installed)
 
 - Added permanent identities and trust for 23 residents, ten finite delivery
   favors, an active-favor journal and actor-owned acceptance/handover.
@@ -30,9 +30,11 @@
   funding. New modules start empty. The outer section stays version one; strict
   validation and unreadable/future-section preservation remain in place.
 - **17 of 17 native and local-resource suites passed**, covering the combined
-  increment. Source commit **37efc4bb5** is configured successfully and the full
-  linked game build is in progress. Staging is pending; the last installed
-  checkpoint remains **002be29**.
+  increment. Source commit **46c17fa9e** configured, compiled, linked and installed
+  successfully at 08:09 UTC. Both modded runtime executables match the build;
+  both settings files and all four existing save files are unchanged. An initial
+  strict floating-point warning in Market door drawing was corrected before the
+  successful build. Receipts and logs are recorded in the worklog.
 
 No game was started. These are completed source changes with automated checks,
 not a claim of installation or gameplay acceptance. Full building/interior/castle

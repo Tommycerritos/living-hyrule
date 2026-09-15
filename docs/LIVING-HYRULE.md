@@ -7,10 +7,10 @@ preserving the main quest. Randomizer and Boss Rush are outside this increment's
 supported scope. The [worklog](LIVING-HYRULE-WORKLOG.md) identifies the last
 successfully installed build; the [changelog](LIVING-HYRULE-CHANGELOG.md) records
 individual stages. The combined schema-four source has passed **17 of 17 native
-and local-resource test suites**. Configuration passed and the full game build
-is in progress; staging is pending. The
-last installed checkpoint remains **002be29**. No game was started, and automated
-checks do not establish gameplay acceptance.
+and local-resource test suites**. The full game configured, compiled, linked and
+installed successfully as **46c17fa** at 08:09 UTC on September 15. Both modded
+runtime executables match the build; their settings and saves are unchanged.
+No game was started, and automated checks do not establish gameplay acceptance.
 
 ### People and direct trade
 

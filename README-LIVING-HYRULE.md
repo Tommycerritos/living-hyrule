@@ -37,10 +37,10 @@ the original adventure:
   recognition, culminating in the title **High Steward of Hyrule**.
 
 **Verification:** all **17 native and local-resource test suites passed** for the
-combined schema-four source. Configuration passed and the full game build is in
-progress; staging is pending. The last
-installed checkpoint remains **002be29**; the additions above are not all in that
-executable. No game was started during this implementation pass.
+combined schema-four source. The complete game configured, compiled, linked and
+installed successfully as **46c17fa** at 08:09 UTC on September 15. Both modded
+runtime executables match the compiled file; settings and saves are unchanged.
+No game was started during this implementation pass.
 
 See the [worklog](docs/LIVING-HYRULE-WORKLOG.md) for the latest build and installed
 executable verification. Code implementation, successful compilation and gameplay

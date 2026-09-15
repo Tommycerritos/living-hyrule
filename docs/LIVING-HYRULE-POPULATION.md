@@ -13,12 +13,10 @@ and four Zora/Gerudo residents, plus Zelda, Captain Aren and Maelin in a postgam
 royal audience. Shared favors, relationships and rent choices join direct trade.
 Pella and Edda have short walking routines; a funded Market exterior, regional
 cloth dyes and charter recognition are also integrated in the current source.
-The tables headed **Implemented in source** describe that code; they do not
-claim a successful build or gameplay acceptance. The owner will test the final
-playable result. All 17 native/local-resource suites and configuration passed;
-the full game build is in progress and staging is pending, with installed
-checkpoint 002be29 retained. No game launch
-is part of this implementation pass.
+The tables headed **Implemented in source** describe code in installed build
+**46c17fa**. All 17 native/local-resource suites and the full configure, compile,
+link and installation passed. The owner will test the final playable result;
+no game launch or gameplay acceptance is part of this implementation pass.
 
 This remains a small population in selected settlements, not worldwide coverage
 of the 110 scenes. The later cast, interiors, wider walking routes, deeper social
@@ -503,4 +501,4 @@ colors; new equipment models and deeper combat also remain unfinished.
 
 Keep deployment incremental and review the owner's final gameplay feedback
 before describing placements or presentation as accepted. The current source's
-17 passing suites do not replace the pending full build, staging or gameplay checks.
+17 passing suites and successful installed build do not replace gameplay checks.
