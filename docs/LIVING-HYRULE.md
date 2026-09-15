@@ -55,6 +55,11 @@ Before implementing features, investigate the pinned source's mod hooks, custom
 save serialization and versioning, actor spawning, dialogue, UI, wallet arithmetic,
 and post-Ganon state. Produce an architecture proposal and phased plan.
 
+Starting points in the pinned source (verify suitability during the audit):
+`soh/soh/SaveManager.h`, `soh/soh/SaveManager.cpp`,
+`soh/soh/Enhancements/game-interactor/GameInteractor.h`, and
+`soh/soh/SohGui/SohMenu.h`. See upstream `docs/MODDING.md` for its code-mod workflow.
+
 First proposed vertical slice: **one Kakariko property, one seller, bank account,
 purchase, persistent ownership, periodic rent, and save/reload**. Define rollback,
 save migration, time advancement, and balance rules before coding. Use a disposable
