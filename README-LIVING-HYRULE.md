@@ -29,8 +29,8 @@ does not launch the game automatically.
 
 ## Play the installed development build
 
-On the configured workstation, open **C:\ZeldaDev\Launch Living Hyrule.lnk** when
-you are ready. The vanilla installation has its own separate directory.
+On the configured workstation, use the **Living Hyrule (Modded)** desktop
+shortcut when you are ready. The vanilla installation has its own separate directory.
 
 1. Load a development save in a normal adventure or Master Quest.
 2. Open **Enhancements > Living Hyrule > Open Living Hyrule** in the port menu.
