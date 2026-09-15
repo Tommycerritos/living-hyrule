@@ -1,5 +1,6 @@
 #include "ChallengeMode.h"
 #include "ChallengePolicy.h"
+#include "RegionalEncounters.h"
 
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/ShipInit.hpp"
@@ -77,7 +78,8 @@ const Actor* FindLiveActor(const Actor* candidate) {
 
 bool IsEnemy(const Actor* actor) {
     return actor != nullptr && actor->id != ACTOR_EN_FIRE_ROCK && actor->id != ACTOR_EN_ENCOUNT2 &&
-           (actor->category == ACTORCAT_ENEMY || actor->category == ACTORCAT_BOSS || actor->id == ACTOR_EN_TORCH2);
+           (actor->category == ACTORCAT_ENEMY || actor->category == ACTORCAT_BOSS || actor->id == ACTOR_EN_TORCH2 ||
+            IsRegionalEncounterActor(actor));
 }
 
 bool IsEnemyCollision(const Player* player) {
