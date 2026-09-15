@@ -56,8 +56,12 @@ windfall. Bank capacity limits actual credits; lifetime earnings saturate safely
 
 After the game's recorded Ganon victory, enabled Living Hyrule removes the
 ruined Market's Redeads for free, including offscreen ones. Relief residents can
-return, and businesses can be purchased/repaired. The mod does not set the
-completion flag or replace the ending. The surrounding town remains ruined.
+return, and businesses can be purchased/repaired. The saved final-boss timestamp
+is authoritative: the generic gameComplete flag also marks custom timer goals
+and resets on loading. A genuine final victory queues one statistics-only save
+after the engine's boss hooks finish. This preserves defeat evidence through
+restart while leaving unsaved wallet, ledger and normal progress alone. The
+original ending remains intact; the surrounding town remains ruined.
 
 Property supplies are independent, non-colliding decorative actors anchored to
 seven WorldResidents managers. An owned adult business awaiting repairs shows

@@ -28,7 +28,12 @@ namespace LivingHyrule {
 static_assert(std::is_trivially_copyable_v<EconomyState>);
 static_assert(std::is_trivially_copyable_v<SaveContext>);
 
+static int pendingVictoryFile = -1;
+static bool victoryQueuedThisScene = false;
+
 static void InitSave(bool) {
+    pendingVictoryFile = -1;
+    victoryQueuedThisScene = false;
     gSaveContext.ship.livingHyrule = {};
 }
 
@@ -72,6 +77,44 @@ static bool IsSupportedAdventure() {
     return IS_VANILLA || IS_MASTER_QUEST;
 }
 
+static bool CanPersistVictory(int fileNum) {
+    return GameInteractor::IsSaveLoaded(false) && IsSupportedAdventure() && LINK_IS_ADULT &&
+           gSaveContext.gameMode == GAMEMODE_NORMAL && fileNum >= 0 && fileNum <= 2 &&
+           gSaveContext.fileNum == fileNum && IsValidState(gSaveContext.ship.livingHyrule) &&
+           gSaveContext.ship.livingHyrule.enabled == 1 && SaveManager::Instance->SaveFile_Exist(fileNum);
+}
+
+static void QueueVictoryRecord(void*) {
+    if (victoryQueuedThisScene || !CanPersistVictory(gSaveContext.fileNum) ||
+        gPlayState->sceneNum != SCENE_GANON_BOSS) {
+        return;
+    }
+    // This hook runs only on the genuine final-boss defeat event. Defer until
+    // all handlers, including the engine's timestamp handler, have completed.
+    pendingVictoryFile = gSaveContext.fileNum;
+    victoryQueuedThisScene = true;
+}
+
+static void PersistVictoryRecord() {
+    if (pendingVictoryFile < 0) {
+        return;
+    }
+    const int fileNum = pendingVictoryFile;
+    pendingVictoryFile = -1;
+    if (!CanPersistVictory(fileNum)) {
+        return;
+    }
+    auto& timestamp = gSaveContext.ship.stats.itemTimestamp[TIMESTAMP_DEFEAT_GANON];
+    // A debug adventure can reach the real victory event with a zero timer.
+    // Zero means "never defeated" in the existing persistent statistics format.
+    if (timestamp == 0) {
+        timestamp = 1;
+    }
+    // The ending has no unconditional normal save. Persist only statistics:
+    // unsaved base-game progress, wallet and ledger keep their usual semantics.
+    SaveManager::Instance->SaveSection(fileNum, SECTION_ID_STATS, true);
+}
+
 static bool IsKakarikoTradeOpen() {
     return LINK_IS_CHILD || CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW);
 }
@@ -86,7 +129,9 @@ WorldProgress GetWorldProgress() {
     world.spirit = CHECK_QUEST_ITEM(QUEST_MEDALLION_SPIRIT);
     world.gerudoMembership = CHECK_QUEST_ITEM(QUEST_GERUDO_CARD);
     world.ranchFreed = Flags_GetEventChkInf(EVENTCHKINF_EPONA_OBTAINED);
-    world.ganonDefeated = gSaveContext.ship.stats.gameComplete;
+    // gameComplete also marks custom time-split completion and is reset on
+    // loading a save. Only the persisted final-boss record proves victory.
+    world.ganonDefeated = gSaveContext.ship.stats.itemTimestamp[TIMESTAMP_DEFEAT_GANON] != 0;
     return world;
 }
 
@@ -320,6 +365,17 @@ static void RegisterLivingHyrule() {
     SaveManager::Instance->AddSaveFunction("livingHyrule", 1, SaveSave, true, SECTION_PARENT_NONE, CanSave);
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(UpdateRent);
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(ClearMarketThreats);
+    GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnBossDefeat>(ACTOR_BOSS_GANON2,
+                                                                                  QueueVictoryRecord);
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(PersistVictoryRecord);
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnSceneInit>([](int16_t) {
+        pendingVictoryFile = -1;
+        victoryQueuedThisScene = false;
+    });
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayDestroy>([]() {
+        pendingVictoryFile = -1;
+        victoryQueuedThisScene = false;
+    });
 }
 
 static RegisterShipInitFunc initFunc(RegisterLivingHyrule);

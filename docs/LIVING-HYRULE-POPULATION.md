@@ -65,7 +65,7 @@ that a candidate will be placed.
 
 | Resident | Place and work | Child schedule | Adult schedule | Property dialogue |
 | --- | --- | --- | --- | --- |
-| Vessa | Market grocer | Daytime market | Daytime after the saved Ganon-completion flag, with economy enabled; available before buying or repairing | Market produce stall (0) |
+| Vessa | Market grocer | Daytime market | Daytime after the saved Ganon-defeat timestamp, with economy enabled; available before buying or repairing | Market produce stall (0) |
 | Hadrin | Market porter | Daytime market | Same market relief gate as Vessa | Market guesthouse (1) |
 | Pella | Market lantern keeper | Night market | Night after the same market relief gate | Conversation only |
 | Caro | Field road courier | Daytime | Daytime after Forest Medallion | South road orchard (2) |
@@ -78,8 +78,9 @@ that a candidate will be placed.
 These actors use compatible civilian skeleton/head families with individual
 clothing palettes, proportions, and idle poses. They stand at authored work or
 travel stops; walking journeys and indoor relocation are not implemented.
-Adult market relief reads the existing saved completion flag. It neither creates
-a postgame save nor reconstructs the ruined market.
+Adult market relief reads the saved final-boss defeat timestamp. Genuine final
+victory records statistics separately so that evidence survives restarting.
+This does not reconstruct the market or automatically save wallet/ledger changes.
 
 ### Four Kokiri and Gorons
 
@@ -134,7 +135,7 @@ families and the legacy cottage do not yet have these supply props.
 **C** below means Child Link, **A** means the adult region during its crisis,
 **R** means its story problem has been resolved, and **P** means broader planned
 persistent postgame life. The implemented market relief gate above is a limited
-use of the saved completion flag, not that wider postgame system.
+use of the saved final-boss defeat timestamp, not that wider postgame system.
 
 - **Childhood:** settlements are busy at sensible hours. Preserve local problems,
   such as Goron hunger before Dodongo's Cavern is resolved; prosperity is not a
@@ -156,7 +157,7 @@ use of the saved completion flag, not that wider postgame system.
   must not bypass fortress access or turn every Gerudo into a shopkeeper.
 - **Castle Town:** ordinary civilian life does not return to the ruined adult
   market during the main quest. The current relief population requires the saved
-  Ganon-completion flag and enabled economy, matching the market enemy cleanup.
+  Ganon-defeat timestamp and enabled economy, matching the market enemy cleanup.
   Building restoration remains separate work.
 - **Postgame:** entering an ending map is not proof of adventure completion.
   Current relief reads the existing saved flag; new ending flow, postgame save
@@ -270,9 +271,9 @@ safe NPC location: room layout and quest interactions still need review.
 | `0x1D` | `SCENE_MARKET_ENTRANCE_RUINS` | No new civilian traffic in A. Planned P relief deliveries after safety is implemented. | No automatic recovery during the main quest; quieter guarded nights in future P. |
 | `0x1E` | `SCENE_BACK_ALLEY_DAY` | Planned: Mira visiting a tailor, Hadrin with deliveries, one resident at a doorway. | C day; retain room for original dog, trade, and shop interactions. |
 | `0x1F` | `SCENE_BACK_ALLEY_NIGHT` | Planned: Pella tending lights and one late-returning resident. | C night; a quieter alley, not a second daytime market. |
-| `0x20` | `SCENE_MARKET_DAY` | **Source:** Vessa and Hadrin. Additional customers remain planned. | Child day; adult only with the saved Ganon-completion flag and enabled economy. |
-| `0x21` | `SCENE_MARKET_NIGHT` | **Source:** Pella tending lights. | Child night; adult only with the saved Ganon-completion flag and enabled economy. Preserve the dog search and doors. |
-| `0x22` | `SCENE_MARKET_RUINS` | **Source:** Vessa/Hadrin by day and Pella by night after the relief gate. | Adult, saved Ganon-completion flag, enabled economy. No civilians before that gate, no rebuilt geometry or construction crews. |
+| `0x20` | `SCENE_MARKET_DAY` | **Source:** Vessa and Hadrin. Additional customers remain planned. | Child day; adult only with the saved Ganon-defeat timestamp and enabled economy. |
+| `0x21` | `SCENE_MARKET_NIGHT` | **Source:** Pella tending lights. | Child night; adult only with the saved Ganon-defeat timestamp and enabled economy. Preserve the dog search and doors. |
+| `0x22` | `SCENE_MARKET_RUINS` | **Source:** Vessa/Hadrin by day and Pella by night after the relief gate. | Adult, saved Ganon-defeat timestamp, enabled economy. No civilians before that gate, no rebuilt geometry or construction crews. |
 | `0x23` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_DAY` | Planned: Meret consulting records and one quiet pilgrim away from the entrance. | C day; no crowd over the story approach or Gossip Stones. |
 | `0x24` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_NIGHT` | Planned: one watchful caretaker near an existing safe edge. | C night; keep the temple's stillness. |
 | `0x25` | `SCENE_TEMPLE_OF_TIME_EXTERIOR_RUINS` | No added everyday visitors in A; planned P caretaker after town safety. | Preserve adult story arrival and the ruined landscape. |

@@ -377,19 +377,19 @@ extern "C" void LivingHyruleForestMountain_Draw(Actor* actor, PlayState* play) {
     Gfx_SetupDL_25Opa(play->state.gfxCtx);
     if (look.goron) {
         static const char* eyes[] = { gGoronCsEyeOpenTex, gGoronCsEyeHalfTex, gGoronCsEyeClosedTex };
-        gSPSegment(POLY_OPA_DISP++, 0x08, eyes[eye]);
-        gSPSegment(POLY_OPA_DISP++, 0x09, gGoronCsMouthNeutralTex);
+        gSPSegment(POLY_OPA_DISP++, 0x08, reinterpret_cast<uintptr_t>(eyes[eye]));
+        gSPSegment(POLY_OPA_DISP++, 0x09, reinterpret_cast<uintptr_t>(gGoronCsMouthNeutralTex));
     } else {
         gDPSetEnvColor(POLY_OPA_DISP++, 0, 0, 0, 255);
-        gSPSegment(POLY_OPA_DISP++, 0x08, MaterialColor(play->state.gfxCtx, look.tunic));
-        gSPSegment(POLY_OPA_DISP++, 0x09, MaterialColor(play->state.gfxCtx, look.boots));
+        gSPSegment(POLY_OPA_DISP++, 0x08, reinterpret_cast<uintptr_t>(MaterialColor(play->state.gfxCtx, look.tunic)));
+        gSPSegment(POLY_OPA_DISP++, 0x09, reinterpret_cast<uintptr_t>(MaterialColor(play->state.gfxCtx, look.boots)));
         static const char* eyes[] = { gKw1EyeOpenTex, gKw1EyeHalfTex, gKw1EyeClosedTex };
-        gSPSegment(POLY_OPA_DISP++, 0x0A, eyes[eye]);
+        gSPSegment(POLY_OPA_DISP++, 0x0A, reinterpret_cast<uintptr_t>(eyes[eye]));
         // Native Kokiri materials call segment 0x0C for their opaque pass.
         // Supply the same empty list as func_80034BA0; do not inherit old state.
         auto* end = static_cast<Gfx*>(Graph_Alloc(play->state.gfxCtx, sizeof(Gfx)));
         gSPEndDisplayList(end);
-        gSPSegment(POLY_OPA_DISP++, 0x0C, end);
+        gSPSegment(POLY_OPA_DISP++, 0x0C, reinterpret_cast<uintptr_t>(end));
     }
     SkelAnime_DrawSkeletonOpa(play, &resident->skelAnime, OverrideLimb, PostLimb, resident);
     CLOSE_DISPS(play->state.gfxCtx);

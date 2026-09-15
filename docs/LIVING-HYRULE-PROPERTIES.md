@@ -49,7 +49,7 @@ both costs. Repair status survives traveling back and forth in time.
 
 | Adult region | Unlock requirement |
 | --- | --- |
-| Castle Town | Saved adventure-completion flag from defeating Ganon |
+| Castle Town | Saved final-boss defeat timestamp |
 | Hyrule Field, Kokiri Forest | Forest Medallion |
 | Lon Lon Ranch | Epona obtained |
 | Kakariko | Shadow Medallion |
@@ -95,8 +95,10 @@ sale, and no original shopkeeper is replaced.
 
 With Living Hyrule active, defeated Ganon and Adult Link, Redeads are removed
 from the ruined market without payment. Other scenes' enemies are unaffected.
-The code reads the existing adventure-completion flag; it does not replace the
-ending, create a postgame save, or mark an unfinished adventure complete.
+The code reads the saved final-boss defeat timestamp. A genuine final victory
+queues a statistics-only save so it survives the ending and restart; ordinary
+progress, wallet and ledger still use normal saves. Custom time-split completion
+cannot unlock relief, and the original ending is preserved.
 
 ### Decorative supply arrangements
 
@@ -126,8 +128,8 @@ The deeds, income, paid repairs, resident offers, and limited supplies are sourc
 implementations of separate parts of the larger vision. Physical rebuilding,
 interiors, staffing simulation, relationships, and population growth still need
 their own systems. Water Temple completion permits business operations under
-the stated rules without changing frozen geometry. The existing Ganon-completion
-flag supports limited market relief, not a new ending or complete postgame mode.
+the stated rules without changing frozen geometry. The saved Ganon-defeat
+timestamp supports limited market relief, not a new ending or complete postgame mode.
 
 Native tests cover the economic state and save migration. This stage also adds
 pure-policy checks for transaction choices, regional resident gates, scenery

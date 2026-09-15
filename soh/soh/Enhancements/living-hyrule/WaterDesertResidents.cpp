@@ -338,7 +338,8 @@ extern "C" void DrawRegionalResident(Actor* actor, PlayState* play) {
     static const char* gerudoEyes[] = { gGerudoWhiteEyeOpenTex, gGerudoWhiteEyeHalfTex, gGerudoWhiteEyeClosedTex };
     const bool zora = IsZora(static_cast<WaterDesertResidentId>(actor->params));
     OPEN_DISPS(play->state.gfxCtx);
-    gSPSegment(POLY_OPA_DISP++, 0x08, zora ? zoraEyes[resident->eyeIndex] : gerudoEyes[resident->eyeIndex]);
+    gSPSegment(POLY_OPA_DISP++, 0x08,
+               reinterpret_cast<uintptr_t>(zora ? zoraEyes[resident->eyeIndex] : gerudoEyes[resident->eyeIndex]));
     if (zora) {
         func_80034BA0(play, &resident->skelAnime, OverrideZoraLimb, PostZoraLimb, actor, 255);
     } else {

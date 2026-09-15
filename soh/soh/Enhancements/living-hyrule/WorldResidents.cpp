@@ -472,9 +472,9 @@ extern "C" void DrawWorldResident(Actor* actor, PlayState* play) {
     OPEN_DISPS(play->state.gfxCtx);
     Gfx_SetupDL_25Opa(play->state.gfxCtx);
     Matrix_Translate(look.modelOffset.x, look.modelOffset.y, look.modelOffset.z, MTXMODE_APPLY);
-    gSPSegment(POLY_OPA_DISP++, 0x08, MaterialColor(play->state.gfxCtx, look.primary));
-    gSPSegment(POLY_OPA_DISP++, 0x09, MaterialColor(play->state.gfxCtx, look.secondary));
-    gSPSegment(POLY_OPA_DISP++, 0x0A, MaterialColor(play->state.gfxCtx, look.accent));
+    gSPSegment(POLY_OPA_DISP++, 0x08, reinterpret_cast<uintptr_t>(MaterialColor(play->state.gfxCtx, look.primary)));
+    gSPSegment(POLY_OPA_DISP++, 0x09, reinterpret_cast<uintptr_t>(MaterialColor(play->state.gfxCtx, look.secondary)));
+    gSPSegment(POLY_OPA_DISP++, 0x0A, reinterpret_cast<uintptr_t>(MaterialColor(play->state.gfxCtx, look.accent)));
     SkelAnime_DrawSkeletonOpa(play, &resident->skelAnime, OverrideWorldLimb, PostWorldLimb, resident);
     CLOSE_DISPS(play->state.gfxCtx);
 }

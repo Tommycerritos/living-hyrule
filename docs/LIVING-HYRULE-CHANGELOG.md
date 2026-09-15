@@ -16,6 +16,10 @@
   and new interiors remain unfinished.
 - Extended free post-Ganon Market Redead removal to offscreen enemies so
   returning relief workers do not depend on enemy update visibility.
+- Required the saved final-boss timestamp for relief, rather than the generic
+  completion flag used by custom timer goals. A genuine Ganon defeat queues a
+  statistics-only save so postgame evidence survives restart without autosaving
+  the wallet, ledger or base-game progress.
 - Added optional double ordinary enemy/boss collision damage and alternating
   temporary loose-heart filtering. Existing cheats/modifiers take priority;
   emergency hearts and permanent pickups keep their normal rules.
