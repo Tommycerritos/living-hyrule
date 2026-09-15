@@ -102,7 +102,11 @@ WardrobeState* GetRegionalWardrobeStateForSave() {
 
 bool HasFundedZoraRestoration() {
     const auto& economy = gSaveContext.ship.livingHyrule;
-    return GameInteractor::IsSaveLoaded(false) && IsSupportedAdventure() && IsValidState(economy) &&
+    // Collision selection runs before the new Player is constructed.
+    // IsSaveLoaded requires that Player and would suppress every funded visit.
+    return IsSupportedAdventure() && gSaveContext.gameMode == GAMEMODE_NORMAL && gSaveContext.fileNum >= 0 &&
+           gSaveContext.fileNum <= 2 && SaveManager::Instance != nullptr &&
+           SaveManager::Instance->SaveFile_Exist(gSaveContext.fileNum) && IsValidState(economy) &&
            economy.enabled == 1 && economy.zoraRestored == 1;
 }
 
@@ -548,7 +552,7 @@ static void FinishQueuedEstateTravel() {
         return;
     }
     if (Message_GetState(&gPlayState->msgCtx) != TEXT_STATE_NONE || (player->stateFlags1 & PLAYER_STATE1_TALKING) ||
-        !IsSafeGameplay() || Ship::Context::GetRawInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible())
+        !IsRoyalEstateTravelSafe() || Ship::Context::GetRawInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible())
         return;
     const bool returning = pendingEstateTravel.returning;
     pendingEstateTravel = {};

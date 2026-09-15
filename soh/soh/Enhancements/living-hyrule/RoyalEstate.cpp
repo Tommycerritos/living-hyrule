@@ -51,7 +51,13 @@ struct GardenAssets {
 // redirected; the archive's child/story exit list and all quest flags survive.
 std::unique_ptr<GardenAssets> assets;
 bool preparationAttempted = false;
-std::array<int16_t, 2> gardenExits = { kRoyalGardenReturnEntrance, 0 };
+// Collision exit fields have five bits. Cover their entire range so a saved
+// garden visit still has a bounded return table if resource validation fails.
+std::array<int16_t, 32> gardenExits = [] {
+    std::array<int16_t, 32> exits{};
+    exits.fill(kRoyalGardenReturnEntrance);
+    return exits;
+}();
 PlayState* activePlay = nullptr;
 int activeFile = -1;
 bool verifiedVisit = false;
@@ -394,6 +400,10 @@ const char* RoyalEstateReadinessText(RoyalEstateReadiness readiness) {
             return "The royal garden's entrance or return route is unavailable.";
     }
     return "The royal garden is unavailable.";
+}
+
+bool IsRoyalEstateTravelSafe() {
+    return SafeTravel();
 }
 
 std::string EnterRoyalEstate() {

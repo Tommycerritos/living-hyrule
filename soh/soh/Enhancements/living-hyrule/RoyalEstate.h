@@ -25,6 +25,8 @@ const char* RoyalEstateReadinessText(RoyalEstateReadiness readiness);
 // or residents are disabled. No scene resource or global entrance is modified.
 // An unprepared remembered visit is an empty escape shell: readiness is not Ready.
 bool IsRoyalEstateActive();
+// Shared by immediate controls and invitations deferred until dialogue ends.
+bool IsRoyalEstateTravelSafe();
 std::string EnterRoyalEstate();
 std::string ReturnFromRoyalEstate();
 

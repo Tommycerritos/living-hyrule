@@ -1,6 +1,7 @@
 #include "Stewardship.h"
 
 #include "MarketRestoration.h"
+#include "RoyalEstate.h"
 #include "ResidentSocial.h"
 #include "StewardshipPolicy.h"
 #include "soh/SaveManager.h"
@@ -314,7 +315,8 @@ std::string StewardshipGreeting(ResidentId resident) {
         return {};
 
     if (resident == ResidentId::Zelda || resident == ResidentId::Aren || resident == ResidentId::Maelin) {
-        if (!status.world.ganonDefeated || gPlayState->sceneNum != SCENE_OUTSIDE_GANONS_CASTLE)
+        if (!status.world.ganonDefeated ||
+            (gPlayState->sceneNum != SCENE_OUTSIDE_GANONS_CASTLE && !IsRoyalEstateActive()))
             return {};
         if (count == kStewardshipRegionCount) {
             if (resident == ResidentId::Zelda)

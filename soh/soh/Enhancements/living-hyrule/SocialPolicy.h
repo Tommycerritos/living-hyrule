@@ -27,7 +27,7 @@ inline constexpr std::array<Favor, kFavorCount> kFavors = { {
     { ResidentId::Fenn, ResidentId::Luma, "Woodland seeds", "Take Fenn's seed packet to Luma in Kokiri Forest." },
     { ResidentId::Doron, ResidentId::Brakka, "Stone sample", "Take Doron's stone sample to Brakka in Goron City." },
     { ResidentId::Lethra, ResidentId::Neris, "Water readings",
-      "Take Lethra's water readings to Neris beside Zora's River." },
+      "Take Lethra's water readings to Neris in Zora lands. Look by the river or in the restored Domain by day." },
     { ResidentId::Rasha, ResidentId::Kesra, "Cloth tally", "Take Rasha's cloth tally to Kesra at Gerudo Fortress." },
 } };
 inline constexpr uint32_t kMarketRestorationPrice = 25000;

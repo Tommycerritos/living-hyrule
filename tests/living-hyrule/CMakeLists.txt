@@ -94,7 +94,7 @@ else()
 endif()
 add_test(NAME living_hyrule_world_population_tests COMMAND living_hyrule_world_population_tests)
 
-foreach(suite IN ITEMS Scenery ForestMountain WaterDesert Social RoyalAudience MarketRestoration Movement RegionalWardrobe Stewardship LifeProgression)
+foreach(suite IN ITEMS Scenery ForestMountain WaterDesert Social RoyalAudience MarketRestoration Movement RegionalWardrobe Stewardship LifeProgression ZoraRestoration RoyalEstate RegionalEncounter)
     string(TOLOWER "${suite}" suite_lower)
     set(target_name "living_hyrule_${suite_lower}_tests")
     add_executable(${target_name} "${suite}Tests.cpp")
@@ -121,5 +121,17 @@ if(LIVING_HYRULE_NATIVE_ARCHIVE)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
     add_test(NAME living_hyrule_market_resources
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/MarketRestorationResourceTests.py"
+                "${LIVING_HYRULE_NATIVE_ARCHIVE}")
+    add_test(NAME living_hyrule_zora_resources
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/ZoraRestorationResourceTests.py"
+                "${LIVING_HYRULE_NATIVE_ARCHIVE}")
+    add_test(NAME living_hyrule_royal_estate_resources
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/RoyalEstateResourceTests.py"
+                "${LIVING_HYRULE_NATIVE_ARCHIVE}")
+    add_test(NAME living_hyrule_domain_resident_resources
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/DomainResidentResourceTests.py"
+                "${LIVING_HYRULE_NATIVE_ARCHIVE}")
+    add_test(NAME living_hyrule_regional_encounter_resources
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/RegionalEncounterResourceTests.py"
                 "${LIVING_HYRULE_NATIVE_ARCHIVE}")
 endif()

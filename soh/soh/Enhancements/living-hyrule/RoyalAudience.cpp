@@ -3,7 +3,9 @@
 #include "RoyalEstatePolicy.h"
 #include "LivingHyrule.h"
 #include "ResidentSocial.h"
+#include "RoyalProgressionPolicy.h"
 #include "Stewardship.h"
+#include "TradeDialogue.h"
 
 #include "soh/ActorDB.h"
 #include "soh/Enhancements/custom-message/CustomMessageManager.h"
@@ -33,9 +35,9 @@ extern PlayState* gPlayState;
 namespace LivingHyrule {
 namespace {
 constexpr uint16_t kFirstText = 0x9900;
-// 0x9910..0x9912 and 0x9920..0x9922 are reserved for later offers and replies.
-// The audience shares resident greetings and recorded recovery relationships.
-// It does not sell a castle deed or run Zelda's original escape behavior.
+constexpr uint16_t kFirstReply = 0x9920;
+// Private quote/reply IDs belong to these three actors. The shared conversation
+// helper owns frozen choices and transactions; no original royal quest AI runs.
 constexpr int kResidentCount = static_cast<int>(RoyalResidentId::Count);
 constexpr float kRadians = 3.14159265358979323846f / 32768.0f;
 std::array<int, kResidentCount> actorIds = { -1, -1, -1 };
@@ -48,6 +50,7 @@ struct RoyalActor {
     SkelAnime skelAnime;
     ColliderCylinder collider;
     NpcInteractInfo interact;
+    TradeDialogueState trade;
     Vec3s joints[17];
     Vec3s morphs[17];
     s16 talkState;
@@ -87,66 +90,58 @@ std::string RecoveryDialogue(RoyalResidentId id) {
     const auto world = GetWorldProgress();
     if (!IsValidState(economy))
         return "";
-    unsigned int owned = 0;
-    unsigned int working = 0;
-    for (uint32_t property = 0; property < kProperties.size(); ++property) {
-        owned += OwnsProperty(economy, property) ? 1u : 0u;
-        working += PropertyOperating(economy, property, world) ? 1u : 0u;
-    }
     const unsigned int marketWorking =
         (PropertyOperating(economy, 0, world) ? 1u : 0u) + (PropertyOperating(economy, 1, world) ? 1u : 0u);
     if (id == RoyalResidentId::Zelda) {
+        if (economy.castleEstateOwned)
+            return "^An estate should serve its neighbors. There is still work beyond these garden walls.";
+        if (IsRoyalEstateActive())
+            return "^You need no deed to visit me. Tell me how Hyrule's people are faring.";
         if (economy.marketRestored)
-            return "^The Market's restoration is funded. There are still homes and livelihoods to mend, but "
-                   "you have given the returning families a beginning. The castle remains a separate task.";
-        if (marketWorking == 2)
-            return "^Vessa's stall and Hadrin's guesthouse are working again through your investment. Those small "
-                   "beginnings matter. The castle itself still lies in ruin.";
+            return "^Your Market investment has opened the way to the royal garden. Aren can arrange a visit.";
         if (marketWorking != 0)
-            return "^One of your Market businesses is working again. A returned livelihood is a real beginning, "
-                   "even while the castle above us remains in ruin.";
-        if (OwnsProperty(economy, 0) || OwnsProperty(economy, 1))
-            return "^You hold property in the Market. Speak with its managers about repairs when you are ready; "
-                   "a deed alone cannot put their rooms and stalls back to work.";
-        return "^If you wish to help the Market, Vessa and Hadrin can explain what their businesses need. "
-               "You need no title or fortune to visit me here.";
+            return "^Your working Market business gives returning families a beginning. The square still needs care.";
+        return "^Vessa and Hadrin know what the Market needs. You need no title or fortune to speak with me.";
     }
     if (id == RoyalResidentId::Maelin) {
-        std::string text =
-            "^Your regional deeds: " + std::to_string(owned) + ". Working businesses: " + std::to_string(working) + ".";
-        if (economy.ownsKakarikoCottage)
-            text += " Your Kakariko cottage is recorded separately.";
-        if (owned > working)
-            text += " Some holdings still await repairs or their region's recovery.";
-        text += "^Repairs belong to the local managers. I keep the household's records; there is no castle deed "
-                "to purchase here.";
-        return text;
+        if (economy.castleEstateOwned)
+            return "^The estate is recorded in your name. Zelda and her staff remain here; the deed grants no finished "
+                   "castle rooms.";
+        if (!IsRoyalEstateActive())
+            return economy.marketRestored
+                       ? "^Meet me in the garden for estate business. Aren can show you the route."
+                       : "^Fund the Market's restoration to open garden visits. Estate business can wait.";
+        if (RegionalCharterCount(economy.stewardship) != kStewardshipRegionCount)
+            return "^All eight regional charters are required before I can offer the castle estate deed.";
+        return GetRapport(economy, ResidentId::Zelda) >= kRoyalTrustedRapport
+                   ? "^You qualify for the estate deed. Zelda's trust earns you a tenth off its price."
+                   : "^Your eight charters qualify you for the estate deed. Zelda's deeper trust earns a lower price.";
     }
-    return marketWorking != 0
-               ? "^Your reopened Market business gives returning families a foothold. Our watch stays on this "
-                 "approach; the castle ruins are not a new residence yet."
-               : "^The Market is safe after your victory, but its recovery still needs patient work. The castle "
-                 "has not been rebuilt.";
+    if (economy.castleEstateOwned)
+        return "^Your estate deed is recognized. The royal household stays at home here under our watch.";
+    return IsRoyalEstateActive() ? "^Visitors are welcome. Ownership is not required to use the garden."
+                                 : "^The approach remains scarred. The household's garden is a separate refuge.";
 }
 
 std::string BuildDialogue(RoyalResidentId id) {
     std::string text = "%g" + std::string(GetRoyalResidentName(id)) + "%w. ";
     switch (id) {
         case RoyalResidentId::Zelda:
-            text += "It is good to see you again. Defeating Ganon gave Hyrule a future; now we must care for the "
-                    "people who will live in it.";
-            text += "^I meet visitors here by day while the royal household works from the castle approach. "
-                    "Please tell me what you have seen on your travels.";
+            text += IsRoyalEstateActive()
+                        ? "Welcome to the royal garden. I receive visitors here by day."
+                        : "I receive visitors on this approach by day. Hyrule's recovery belongs to all of us.";
             break;
         case RoyalResidentId::Aren:
-            text += IS_DAY ? "Captain of the relief watch. Zelda is receiving visitors here today. Keep the "
-                             "road clear for the families bringing their petitions."
-                           : "The household has finished its day's work. Zelda and Maelin will return to this "
-                             "spot by daylight. I will keep watch until then.";
+            text += IsRoyalEstateActive()
+                        ? "I keep the garden gate. The east doorway leads back to the castle approach."
+                        : "Captain of the relief watch. I can arrange garden visits once the Market is restored.";
+            if (!IS_DAY)
+                text += " Zelda and Maelin return by daylight.";
             break;
         case RoyalResidentId::Maelin:
-            text += "Steward of the royal household. I keep two lists: what we have, and what people still need. "
-                    "The second is longer, but every working livelihood helps.";
+            text += IsRoyalEstateActive()
+                        ? "Steward of the household. This garden is open; the castle rooms remain unfinished."
+                        : "Steward of the household. I keep our records here while the approach recovers.";
             break;
         default:
             return "Safe travels.";
@@ -155,32 +150,47 @@ std::string BuildDialogue(RoyalResidentId id) {
 }
 
 void LoadText(uint16_t* textId, bool* loadFromMessageTable) {
-    if (*textId < kFirstText || *textId >= kFirstText + kResidentCount)
+    const bool reply = *textId >= kFirstReply && *textId < kFirstReply + kResidentCount;
+    if (!reply && (*textId < kFirstText || *textId >= kFirstText + kResidentCount))
         return;
-    const auto id = static_cast<RoyalResidentId>(*textId - kFirstText);
+    const auto id = static_cast<RoyalResidentId>(*textId - (reply ? kFirstReply : kFirstText));
     // Player owns the speaker before OnOpenText; msgCtx may still reference an
     // earlier conversation. Validate the actor family and identity before text.
     Actor* speaker =
         gPlayState != nullptr && GET_PLAYER(gPlayState) != nullptr ? GET_PLAYER(gPlayState)->talkActor : nullptr;
-    CustomMessage message(IsRoyalResidentActor(speaker) && GetRoyalResidentId(speaker) == id
-                              ? BuildDialogue(id) + ResidentGreeting(speaker) +
-                                    StewardshipGreeting(GetSocialResidentId(speaker))
-                              : "Let's speak again in a moment.");
+    std::string text = "Let's speak again in a moment.";
+    if (IsRoyalResidentActor(speaker) && GetRoyalResidentId(speaker) == id) {
+        auto* resident = reinterpret_cast<RoyalActor*>(speaker);
+        // DescribeResidentDialogue calls ResidentGreeting once on the first
+        // page only. Replies/cycling must not repeat Zelda's deed recognition.
+        text = reply ? std::string(resident->trade.response)
+                     : DescribeResidentDialogue(speaker, resident->trade, BuildDialogue(id));
+    }
+    CustomMessage message(text);
     message.AutoFormat();
     message.LoadIntoFont();
     *loadFromMessageTable = false;
 }
 
-u16 GetTextId(PlayState*, Actor* actor) {
-    return static_cast<u16>(kFirstText + actor->params);
+u16 GetTextId(PlayState* play, Actor* actor) {
+    auto* resident = reinterpret_cast<RoyalActor*>(actor);
+    const u16 textId = static_cast<u16>(kFirstText + actor->params);
+    if (resident->talkState == NPC_TALK_STATE_IDLE && !PlayerHasTalk(play, actor)) {
+        PreparePropertyTrade(resident->trade, -1, textId);
+        PrepareResidentDialogue(resident->trade, actor);
+    }
+    return textId;
 }
 
 s16 UpdateTalkState(PlayState* play, Actor* actor) {
+    auto* resident = reinterpret_cast<RoyalActor*>(actor);
+    const auto state = Message_GetState(&play->msgCtx);
+    if (play->msgCtx.talkActor == actor && state != TEXT_STATE_NONE && state != TEXT_STATE_CLOSING)
+        HandleTradeChoice(play, actor, resident->trade, static_cast<u16>(kFirstReply + actor->params));
     // Preserve the accepted request while Link puts away an item. There may
     // still be no textbox, or msgCtx may belong to the previous speaker.
     if (PlayerHasTalk(play, actor))
         return NPC_TALK_STATE_TALKING;
-    const auto state = Message_GetState(&play->msgCtx);
     return play->msgCtx.talkActor != actor || state == TEXT_STATE_NONE || state == TEXT_STATE_CLOSING
                ? NPC_TALK_STATE_IDLE
                : NPC_TALK_STATE_TALKING;
@@ -523,6 +533,7 @@ void RegisterRoyalAudience() {
         entry.draw = DrawRoyalResident;
         actorIds[id] = ActorDB::Instance->AddEntry(entry).entry.id;
         GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnOpenText>(kFirstText + id, LoadText);
+        GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnOpenText>(kFirstReply + id, LoadText);
     }
     registered = true;
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnSceneInit>([](int16_t) { spawnCooldown = 20; });
