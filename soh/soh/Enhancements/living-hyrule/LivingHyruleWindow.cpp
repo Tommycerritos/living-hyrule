@@ -6,6 +6,7 @@
 #include <string>
 
 #include <imgui.h>
+#include <libultraship/bridge/consolevariablebridge.h>
 #include <ship/Context.h>
 #include <ship/window/Window.h>
 #include <ship/window/gui/Gui.h>
@@ -141,7 +142,16 @@ void LivingHyruleWindow::DrawElement() {
         mAmount = 10;
     }
 
-    ImGui::TextWrapped("Save rupees, own a cottage, and earn a little rent while you adventure.");
+    ImGui::TextWrapped("Save rupees, own a cottage, and get to know the people of Hyrule.");
+    bool residents = CVarGetInteger(CVAR_ENHANCEMENT("LivingHyruleResidents"), 0) != 0;
+    if (ImGui::Checkbox("Additional residents", &residents)) {
+        CVarSetInteger(CVAR_ENHANCEMENT("LivingHyruleResidents"), residents ? 1 : 0);
+        Ship::Context::GetRawInstance()->GetWindow()->GetGui()->SaveConsoleVariablesNextFrame();
+    }
+    ImGui::TextWrapped(
+        "Meet Tavin, Bram, and Orlen in Kakariko during the day. Their presence and conversations change "
+        "as the village recovers.");
+    ImGui::Separator();
     if (!status.loaded) {
         ImGui::Spacing();
         ImGui::TextWrapped("%s", status.reason);
@@ -176,7 +186,7 @@ void LivingHyruleWindow::DrawElement() {
 static void RegisterLivingHyruleMenu() {
     auto gui = Ship::Context::GetRawInstance()->GetWindow()->GetGui();
     gui->AddGuiWindow(
-        std::make_shared<LivingHyruleWindow>(CVAR_WINDOW("LivingHyrule"), "Living Hyrule", ImVec2(540.0f, 600.0f)));
+        std::make_shared<LivingHyruleWindow>(CVAR_WINDOW("LivingHyrule"), "Living Hyrule", ImVec2(540.0f, 690.0f)));
 
     auto menu = SohGui::GetSohMenu();
     menu->AddSidebarEntry("Enhancements", "Living Hyrule", 1);
