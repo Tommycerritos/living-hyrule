@@ -1,5 +1,23 @@
 # Living Hyrule changelog
 
+## 2026-09-14 — Regional property economy
+
+- Implemented sixteen bank-funded deeds across eight regions, with local purchase
+  requirements, independent income timers, crisis shutdowns and paid repairs.
+- Used actual medallion, Epona, Gerudo membership and adventure-completion flags
+  to decide which adult regions can trade. Ownership survives the age transition.
+- Added validated schema-two persistence with legacy economy migration.
+- Added the post-Ganon ruined-market Redead removal rule, free of reconstruction
+  charges. This does not change the ending or set completion flags.
+- Added a fourth automated suite covering regional purchase/repair behavior,
+  income suspension, bank caps, earnings overflow and market-safety policy.
+- Enabled existing residents and the valid file1 economy in the local development
+  profile, preserving backups outside Git. No game launch performed.
+
+Full build/staging status is recorded in the worklog. Property repairs currently
+change operating state; physical reconstruction and owner-NPC transactions are
+still unfinished.
+
 ## 2026-09-14 â€” First additional residents
 
 - Added Tavin the carpenter, Bram the boot-mender, and Orlen the supplier in

@@ -40,12 +40,16 @@ inline nlohmann::json EncodeEconomy(const EconomyState& state) {
     }
 
     return {
-        { "schemaVersion", 1 },
+        { "schemaVersion", 2 },
         { "enabled", state.enabled != 0 },
         { "bankRupees", state.bankRupees },
         { "ownsKakarikoCottage", state.ownsKakarikoCottage != 0 },
         { "rentalFrames", state.rentalFrames },
         { "totalRentEarned", state.totalRentEarned },
+        { "ownedProperties", state.ownedProperties },
+        { "repairedProperties", state.repairedProperties },
+        { "businessFrames", state.businessFrames },
+        { "totalBusinessEarned", state.totalBusinessEarned },
     };
 }
 
@@ -62,8 +66,9 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
         }
 
         uint64_t schemaVersion = 0;
-        if (!SaveCodecDetail::ReadUnsigned(data.at("schemaVersion"), schemaVersion) || schemaVersion != 1 ||
-            !data.at("enabled").is_boolean() || !data.at("ownsKakarikoCottage").is_boolean()) {
+        if (!SaveCodecDetail::ReadUnsigned(data.at("schemaVersion"), schemaVersion) ||
+            (schemaVersion != 1 && schemaVersion != 2) || !data.at("enabled").is_boolean() ||
+            !data.at("ownsKakarikoCottage").is_boolean()) {
             return false;
         }
 
@@ -72,10 +77,26 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
         candidate.ownsKakarikoCottage = data.at("ownsKakarikoCottage").get<bool>();
         if (!SaveCodecDetail::ReadUnsigned(data.at("bankRupees"), candidate.bankRupees) ||
             !SaveCodecDetail::ReadUnsigned(data.at("rentalFrames"), candidate.rentalFrames) ||
-            !SaveCodecDetail::ReadUnsigned(data.at("totalRentEarned"), candidate.totalRentEarned) ||
-            !IsValidState(candidate)) {
+            !SaveCodecDetail::ReadUnsigned(data.at("totalRentEarned"), candidate.totalRentEarned)) {
             return false;
         }
+
+        // Schema one migrates without inventing deeds, earnings or repairs.
+        if (schemaVersion == 2) {
+            if (!SaveCodecDetail::ReadUnsigned(data.at("ownedProperties"), candidate.ownedProperties) ||
+                !SaveCodecDetail::ReadUnsigned(data.at("repairedProperties"), candidate.repairedProperties) ||
+                !SaveCodecDetail::ReadUnsigned(data.at("totalBusinessEarned"), candidate.totalBusinessEarned))
+                return false;
+            const auto& frames = data.at("businessFrames");
+            if (!frames.is_array() || frames.size() != 16)
+                return false;
+            for (unsigned int i = 0; i < 16; ++i) {
+                if (!SaveCodecDetail::ReadUnsigned(frames[i], candidate.businessFrames[i]))
+                    return false;
+            }
+        }
+        if (!IsValidState(candidate))
+            return false;
 
         output = candidate;
         return true;

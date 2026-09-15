@@ -30,13 +30,26 @@ enum class Result {
     WalletFull,
     BankFull,
     AlreadyOwned,
+    Unavailable,
+    NotOwned,
+    AlreadyRepaired,
 };
 
 // Disabled files may retain their assets and partial rent period. Never repair
 // unknown/corrupt state implicitly: callers can reject it during save loading.
 inline bool IsValidState(const EconomyState& state) {
-    return state.enabled <= 1 && state.ownsKakarikoCottage <= 1 && state.bankRupees <= kBankLimit &&
-           state.rentalFrames < kFramesPerRentPeriod;
+    if (state.enabled > 1 || state.ownsKakarikoCottage > 1 || state.bankRupees > kBankLimit ||
+        state.rentalFrames >= kFramesPerRentPeriod || (state.ownedProperties & ~0xffffu) != 0 ||
+        (state.repairedProperties & ~state.ownedProperties) != 0) {
+        return false;
+    }
+    for (unsigned int i = 0; i < 16; ++i) {
+        if (state.businessFrames[i] >= kFramesPerRentPeriod ||
+            (!(state.ownedProperties & (1u << i)) && state.businessFrames[i] != 0)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 inline bool IsValidWallet(int16_t wallet, int walletCapacity) {

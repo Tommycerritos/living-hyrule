@@ -1,5 +1,7 @@
 #include "soh/Enhancements/living-hyrule/SaveCodec.h"
 
+#include <algorithm>
+#include <iterator>
 #include <cstdint>
 #include <iostream>
 #include <limits>
@@ -24,7 +26,9 @@ void Check(bool condition, const std::string& description) {
 bool Equal(const EconomyState& left, const EconomyState& right) {
     return left.enabled == right.enabled && left.bankRupees == right.bankRupees &&
            left.ownsKakarikoCottage == right.ownsKakarikoCottage && left.rentalFrames == right.rentalFrames &&
-           left.totalRentEarned == right.totalRentEarned;
+           left.totalRentEarned == right.totalRentEarned && left.ownedProperties == right.ownedProperties &&
+           left.repairedProperties == right.repairedProperties && left.totalBusinessEarned == right.totalBusinessEarned &&
+           std::equal(std::begin(left.businessFrames), std::end(left.businessFrames), std::begin(right.businessFrames));
 }
 
 EconomyState Holdings(bool enabled = true) {
@@ -48,10 +52,10 @@ void TestRoundTrips() {
     for (const EconomyState state : { EconomyState{}, Holdings(), Holdings(false) }) {
         Check(LivingHyrule::IsValidState(state), "round-trip fixture is valid");
         const json encoded = EncodeEconomy(state);
-        Check(encoded.is_object() && encoded.size() == 6, "encoding has exactly six fields");
+        Check(encoded.is_object() && encoded.size() == 10, "encoding has exactly ten fields");
         Check(encoded.at("enabled").is_boolean(), "enabled encodes as JSON boolean");
         Check(encoded.at("ownsKakarikoCottage").is_boolean(), "ownership encodes as JSON boolean");
-        Check(encoded.at("schemaVersion") == 1, "encoding uses schema version one");
+        Check(encoded.at("schemaVersion") == 2, "encoding uses schema version two");
         EconomyState decoded{};
         Check(DecodeEconomy(json::parse(encoded.dump()), decoded), "serialized round trip succeeds");
         Check(Equal(state, decoded), "round trip preserves every field, including full-width rent total");
@@ -104,7 +108,7 @@ void TestMalformedData() {
         }
     }
 
-    for (const uint64_t version : { uint64_t{ 0 }, uint64_t{ 2 }, (std::numeric_limits<uint64_t>::max)() }) {
+    for (const uint64_t version : { uint64_t{ 0 }, uint64_t{ 3 }, (std::numeric_limits<uint64_t>::max)() }) {
         json unsupported = valid;
         unsupported["schemaVersion"] = version;
         Reject(unsupported, "unsupported schema version " + std::to_string(version));
@@ -138,6 +142,34 @@ int main() {
     try {
         TestRoundTrips();
         TestMalformedData();
+        auto legacy = EncodeEconomy(Holdings());
+        legacy["schemaVersion"] = 1;
+        for (const char* key : { "ownedProperties", "repairedProperties", "businessFrames", "totalBusinessEarned" }) legacy.erase(key);
+        EconomyState migrated{};
+        Check(DecodeEconomy(legacy, migrated), "legacy economy migrates");
+        Check(Equal(migrated, Holdings()), "legacy cottage, bank and timer survive migration");
+        auto portfolio = Holdings();
+        portfolio.ownedProperties = 0xffff;
+        portfolio.repairedProperties = 0xaaaa;
+        portfolio.totalBusinessEarned = UINT64_MAX;
+        for (unsigned int i = 0; i < 16; ++i) portfolio.businessFrames[i] = i * 600;
+        EconomyState restored{};
+        Check(DecodeEconomy(json::parse(EncodeEconomy(portfolio).dump()), restored), "portfolio decodes");
+        Check(Equal(portfolio, restored), "every portfolio field survives snapshot serialization");
+        for (const char* key : { "ownedProperties", "repairedProperties", "businessFrames", "totalBusinessEarned" }) {
+            auto missing = EncodeEconomy(portfolio); missing.erase(key); Reject(missing, key);
+        }
+        for (const json& invalid : { json::array(), json::array({0}), json::object(), json(42) }) {
+            auto malformed = EncodeEconomy(portfolio); malformed["businessFrames"] = invalid; Reject(malformed, "invalid timers");
+        }
+        auto malformed = EncodeEconomy(portfolio);
+        malformed["businessFrames"][15] = 12000; Reject(malformed, "out of range timer");
+        malformed = EncodeEconomy(portfolio);
+        malformed["ownedProperties"] = 0x10000; Reject(malformed, "unknown property bit");
+        malformed = EncodeEconomy(Holdings());
+        malformed["repairedProperties"] = 1; Reject(malformed, "repair without ownership");
+        malformed = EncodeEconomy(Holdings());
+        malformed["businessFrames"][0] = 1; Reject(malformed, "income timer without ownership");
     } catch (const std::exception& error) {
         std::cerr << "Unexpected test exception: " << error.what() << '\n';
         return 1;

@@ -72,6 +72,49 @@ static bool IsKakarikoTradeOpen() {
     return LINK_IS_CHILD || CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW);
 }
 
+static WorldProgress ReadWorldProgress() {
+    WorldProgress world;
+    world.adult = LINK_IS_ADULT;
+    world.forest = CHECK_QUEST_ITEM(QUEST_MEDALLION_FOREST);
+    world.fire = CHECK_QUEST_ITEM(QUEST_MEDALLION_FIRE);
+    world.water = CHECK_QUEST_ITEM(QUEST_MEDALLION_WATER);
+    world.shadow = CHECK_QUEST_ITEM(QUEST_MEDALLION_SHADOW);
+    world.spirit = CHECK_QUEST_ITEM(QUEST_MEDALLION_SPIRIT);
+    world.gerudoMembership = CHECK_QUEST_ITEM(QUEST_GERUDO_CARD);
+    world.ranchFreed = Flags_GetEventChkInf(EVENTCHKINF_EPONA_OBTAINED);
+    world.ganonDefeated = gSaveContext.ship.stats.gameComplete;
+    return world;
+}
+
+static Region CurrentRegion() {
+    switch (gPlayState->sceneNum) {
+        case SCENE_MARKET_DAY:
+        case SCENE_MARKET_NIGHT:
+        case SCENE_MARKET_RUINS:
+            return Region::Market;
+        case SCENE_HYRULE_FIELD:
+            return Region::Field;
+        case SCENE_LON_LON_RANCH:
+            return Region::Ranch;
+        case SCENE_KOKIRI_FOREST:
+            return Region::Forest;
+        case SCENE_KAKARIKO_VILLAGE:
+            return Region::Kakariko;
+        case SCENE_GORON_CITY:
+        case SCENE_DEATH_MOUNTAIN_TRAIL:
+            return Region::Mountain;
+        case SCENE_LAKE_HYLIA:
+        case SCENE_ZORAS_DOMAIN:
+        case SCENE_ZORAS_RIVER:
+            return Region::Water;
+        case SCENE_GERUDOS_FORTRESS:
+        case SCENE_GERUDO_VALLEY:
+            return Region::Desert;
+        default:
+            return Region::Count;
+    }
+}
+
 static bool IsSafeGameplay() {
     return GameInteractor::IsSaveLoaded(false) && !GameInteractor::IsGameplayPaused() &&
            gPlayState->pauseCtx.debugState == 0 && gPlayState->gameOverCtx.state == GAMEOVER_INACTIVE &&
@@ -91,6 +134,8 @@ Status GetStatus() {
     status.walletCapacity = CUR_CAPACITY(UPG_WALLET);
     status.inKakariko = gPlayState->sceneNum == SCENE_KAKARIKO_VILLAGE;
     status.cottageTradeOpen = IsKakarikoTradeOpen();
+    status.world = ReadWorldProgress();
+    status.currentRegion = CurrentRegion();
 
     if (!IsSupportedAdventure()) {
         status.reason = "Living Hyrule is available in a normal adventure or Master Quest.";
@@ -131,6 +176,12 @@ static const char* ExplainResult(Result result) {
             return "That amount will not fit in your bank account.";
         case Result::AlreadyOwned:
             return "You already own this property.";
+        case Result::Unavailable:
+            return "Resolve this region's crisis before trading or repairing adult-era property.";
+        case Result::NotOwned:
+            return "Buy this property before commissioning its repairs.";
+        case Result::AlreadyRepaired:
+            return "This property is already repaired.";
     }
     return "The transaction could not be completed.";
 }
@@ -166,24 +217,38 @@ std::string PerformAction(Action action, uint32_t amount) {
                 return ExplainResult(result);
             }
             return "The Kakariko rental cottage is yours. Rent will go to your bank. Save your game to keep the deed.";
+        case Action::BuyProperty:
+        case Action::RepairProperty:
+            if (amount >= kProperties.size())
+                return "That property is not available.";
+            if (status.currentRegion != kProperties[amount].region)
+                return "Visit the property's region to complete this transaction.";
+            return ExplainResult(action == Action::BuyProperty ? BuyProperty(economy, amount, status.world)
+                                                               : RepairProperty(economy, amount, status.world));
     }
     return "The transaction could not be completed.";
 }
 
 static void UpdateRent() {
-    if (!IsSafeGameplay() || !IsSupportedAdventure() || !IsKakarikoTradeOpen() ||
+    if (!IsSafeGameplay() || !IsSupportedAdventure() ||
         Ship::Context::GetRawInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible()) {
         return;
     }
     auto& economy = gSaveContext.ship.livingHyrule;
     // Do not continue a deleted permanent-death save. Check disk only at a
     // payment boundary, rather than making a filesystem request every frame.
-    if (economy.rentalFrames == kFramesPerRentPeriod - 1 &&
-        !SaveManager::Instance->SaveFile_Exist(gSaveContext.fileNum)) {
+    bool paymentDue = economy.rentalFrames == kFramesPerRentPeriod - 1;
+    for (uint32_t frames : economy.businessFrames)
+        paymentDue |= frames == kFramesPerRentPeriod - 1;
+    if (paymentDue && !SaveManager::Instance->SaveFile_Exist(gSaveContext.fileNum)) {
         return;
     }
-    if (const uint32_t rent = TickRent(economy); rent != 0) {
+    const uint32_t rent = IsKakarikoTradeOpen() ? TickRent(economy) : 0;
+    if (rent != 0) {
         Notification::Emit({ .message = "Kakariko rent: " + std::to_string(rent) + " rupees deposited." });
+    }
+    if (const uint32_t income = TickBusinesses(economy, ReadWorldProgress()); income != 0) {
+        Notification::Emit({ .message = "Business income: " + std::to_string(income) + " rupees deposited." });
     }
 }
 
@@ -199,6 +264,16 @@ static void RegisterLivingHyrule() {
     SaveManager::Instance->AddLoadFunction("livingHyrule", SECTION_VERSION_FALLBACK, PreserveUnreadableSave);
     SaveManager::Instance->AddSaveFunction("livingHyrule", 1, SaveSave, true, SECTION_PARENT_NONE, CanSave);
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(UpdateRent);
+    GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnActorUpdate>(ACTOR_EN_RD, [](void* actorPtr) {
+        if (!IsSupportedAdventure() || !GameInteractor::IsSaveLoaded(false) || IS_CUTSCENE_LAYER) return;
+        const auto& economy = gSaveContext.ship.livingHyrule;
+        if (ShouldClearMarketThreats(ReadWorldProgress(), IsValidState(economy) && economy.enabled == 1,
+                                     gPlayState->sceneNum == SCENE_MARKET_RUINS)) {
+            // Ending Ganon's curse makes the ruined market safe without payment.
+            // No story flags, dungeon enemies or scene geometry are changed.
+            Actor_Kill(static_cast<Actor*>(actorPtr));
+        }
+    });
 }
 
 static RegisterShipInitFunc initFunc(RegisterLivingHyrule);

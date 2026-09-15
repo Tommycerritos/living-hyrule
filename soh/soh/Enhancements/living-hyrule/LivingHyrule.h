@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Economy.h"
+#include "Properties.h"
 #include <string>
 
 namespace LivingHyrule {
 
-enum class Action { Enable, Disable, Deposit, Withdraw, BuyCottage };
+enum class Action { Enable, Disable, Deposit, Withdraw, BuyCottage, BuyProperty, RepairProperty };
 
 struct Status {
     EconomyState economy{};
@@ -16,6 +16,8 @@ struct Status {
     bool canUseLedger = false;
     bool inKakariko = false;
     bool cottageTradeOpen = false;
+    Region currentRegion = Region::Count;
+    WorldProgress world{};
     const char* reason = "Load a save file to begin.";
 };
 

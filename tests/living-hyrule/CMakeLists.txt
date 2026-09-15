@@ -42,3 +42,16 @@ else()
     target_compile_options(living_hyrule_population_tests PRIVATE -Wall -Wextra -Werror -pedantic)
 endif()
 add_test(NAME living_hyrule_population_tests COMMAND living_hyrule_population_tests)
+
+add_executable(living_hyrule_property_tests PropertyTests.cpp)
+target_compile_features(living_hyrule_property_tests PRIVATE cxx_std_17)
+target_include_directories(living_hyrule_property_tests PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/include"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../soh/soh/Enhancements/living-hyrule"
+)
+if(MSVC)
+    target_compile_options(living_hyrule_property_tests PRIVATE /W4 /WX /permissive-)
+else()
+    target_compile_options(living_hyrule_property_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+endif()
+add_test(NAME living_hyrule_property_tests COMMAND living_hyrule_property_tests)

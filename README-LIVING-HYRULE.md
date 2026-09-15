@@ -3,10 +3,11 @@
 An optional life and economy expansion for Ocarina of Time, based on
 [HarbourMasters/Shipwright](https://github.com/HarbourMasters/Shipwright).
 
-**Status: banking, the first rental property, and three additional residents
-are implemented on `feature/living-hyrule-residents`. All three native automated
-test suites passed, and the full game compiled and linked successfully.** Gameplay
-acceptance is left to the project owner; the new mod has not been runtime-playtested.
+**Status: banking, a rental cottage, three Kakariko residents, and sixteen regional
+property/business deeds are implemented.** The new regional build is being
+compiled and staged; see the [current worklog](docs/LIVING-HYRULE-WORKLOG.md) for
+its verification state. Gameplay acceptance belongs to the owner. The game is
+not launched automatically.
 The original main quest, dungeons, story items, and progression remain the foundation.
 
 The resident branch includes the earlier `feature/living-hyrule-economy` work.
@@ -37,9 +38,12 @@ Pausing the economy also preserves balances, ownership, and partial rent progres
 
 This first cottage is a ledger entry representing ownership. Tavin discusses the
 listing, while purchases still use the ledger; there is no cottage interior yet.
-The increment covers banking, one property's ownership and rent, normal saving,
-and the first three additional residents. The wider Living Hyrule vision remains
-future work.
+The regional property expansion adds sixteen purchasable deeds to the same
+ledger. Visit each region to buy or commission adult-era repairs. Businesses
+pay real bank income, suspend during their region's crisis, and retain ownership
+and timers. See [regional property rules](docs/LIVING-HYRULE-PROPERTIES.md).
+The broader reconstruction visuals, new interiors, regional NPC populations,
+relationships, equipment and kingdom-management systems remain unfinished.
 
 ## Project information
 

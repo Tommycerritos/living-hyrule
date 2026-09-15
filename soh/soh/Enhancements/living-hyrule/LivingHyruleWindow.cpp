@@ -34,6 +34,7 @@ class LivingHyruleWindow final : public Ship::GuiWindow {
     void DrawActionButton(const char* label, Action action, uint32_t amount, bool disabled, Status& status);
     void DrawBank(Status& status);
     void DrawCottage(Status& status);
+    void DrawProperties(Status& status);
 
     int mAmount = 10;
     int mLastFileNum = -2;
@@ -134,6 +135,66 @@ void LivingHyruleWindow::DrawCottage(Status& status) {
                        static_cast<unsigned int>(kRentPerPeriod));
 }
 
+void LivingHyruleWindow::DrawProperties(Status& status) {
+    ImGui::Separator();
+    ImGui::TextUnformatted("Property and businesses across Hyrule");
+    ImGui::TextWrapped("Visit a region to purchase its deeds. Income goes to your bank every ten minutes of active "
+                       "play. Adult-era businesses need their region freed and their premises repaired.");
+    ImGui::Text("Lifetime business income: %llu rupees",
+                static_cast<unsigned long long>(status.economy.totalBusinessEarned));
+    for (unsigned int region = 0; region < static_cast<unsigned int>(Region::Count); ++region) {
+        if (!ImGui::CollapsingHeader(kRegionNames[region]))
+            continue;
+        const bool open = RegionOpen(static_cast<Region>(region), status.world);
+        if (!open) {
+            static constexpr const char* requirements[] = {
+                "Defeat Ganon to reopen Castle Town trade.",
+                "Clear the Forest Temple to secure the roads.",
+                "Win Epona's freedom to reopen ranch trade.",
+                "Clear the Forest Temple.",
+                "Clear the Shadow Temple.",
+                "Clear the Fire Temple.",
+                "Clear the Water Temple. The Domain's ice is a separate reconstruction project.",
+                "Earn Gerudo membership and clear the Spirit Temple as an adult."
+            };
+            ImGui::TextWrapped("%s", requirements[region]);
+        }
+        for (uint32_t id = 0; id < kProperties.size(); ++id) {
+            const auto& property = kProperties[id];
+            if (static_cast<unsigned int>(property.region) != region)
+                continue;
+            ImGui::PushID(static_cast<int>(id));
+            ImGui::TextUnformatted(property.name);
+            ImGui::Text("Price: %u | Income: %u rupees per period", property.price, property.income);
+            const bool owned = OwnsProperty(status.economy, id);
+            const bool local = status.currentRegion == property.region;
+            if (!owned) {
+                DrawActionButton(
+                    "Buy deed", Action::BuyProperty, id,
+                    !status.economy.enabled || !open || !local || status.economy.bankRupees < property.price, status);
+            } else if (status.world.adult && !(status.economy.repairedProperties & (1u << id))) {
+                ImGui::Text("Owned; repairs required: %u rupees", property.repairCost);
+                DrawActionButton("Commission repairs", Action::RepairProperty, id,
+                                 !status.economy.enabled || !open || !local ||
+                                     status.economy.bankRupees < property.repairCost,
+                                 status);
+            } else {
+                ImGui::TextUnformatted("Deed owned");
+            }
+            if (!local)
+                ImGui::TextWrapped("Visit this region for purchases and repairs.");
+            if (OwnsProperty(status.economy, id)) {
+                const bool operating = status.economy.enabled && PropertyOperating(status.economy, id, status.world);
+                ImGui::TextUnformatted(operating ? "Operating" : "Income suspended; your deed is kept");
+                const float progress = static_cast<float>(status.economy.businessFrames[id]) / kFramesPerRentPeriod;
+                ImGui::ProgressBar(progress, ImVec2(-1.0f, 0.0f), "Income period");
+            }
+            ImGui::Spacing();
+            ImGui::PopID();
+        }
+    }
+}
+
 void LivingHyruleWindow::DrawElement() {
     Status status = GetStatus();
     if (status.fileNum != mLastFileNum) {
@@ -174,6 +235,7 @@ void LivingHyruleWindow::DrawElement() {
 
     DrawBank(status);
     DrawCottage(status);
+    DrawProperties(status);
 
     ImGui::Separator();
     ImGui::TextWrapped("Save your game normally to save your bank balance, cottage, and rent progress.");

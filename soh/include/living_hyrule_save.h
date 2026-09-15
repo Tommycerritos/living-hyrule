@@ -10,6 +10,10 @@ typedef struct {
     uint8_t ownsKakarikoCottage;
     uint32_t rentalFrames;
     uint64_t totalRentEarned;
+    uint32_t ownedProperties;
+    uint32_t repairedProperties;
+    uint32_t businessFrames[16];
+    uint64_t totalBusinessEarned;
 } LivingHyruleSaveData;
 
 #endif

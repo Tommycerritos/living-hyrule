@@ -31,6 +31,19 @@ blocked candidate positions are retried later. No existing actor is moved.
 Placement is provisional until gameplay acceptance. There are no night-time
 indoor schedules in this increment, and NPC conversations do not transact money.
 
+## Regional property expansion
+
+The [regional property rules](LIVING-HYRULE-PROPERTIES.md) describe sixteen
+additional deeds, paid adult-era repairs, income and story gates. Source is
+implemented on `feature/living-hyrule-regional-properties`. See the
+[worklog](LIVING-HYRULE-WORKLOG.md) for build/staging verification.
+
+The persistence payload now writes schema two and migrates schema one without
+changing old savings, cottage ownership or rent. It adds fixed property and
+repair masks, sixteen individual income timers, and lifetime business earnings.
+The enclosing named save section remains version one; older code rejects the
+unknown inner schema and preserves the section instead of rewriting it.
+
 ## Using the first prototype
 
 Use a disposable development save in a normal adventure or Master Quest. Open
