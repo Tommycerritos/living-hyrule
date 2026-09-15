@@ -2,6 +2,8 @@
 #include "LivingHyrule.h"
 #include "ResidentSocial.h"
 #include "Stewardship.h"
+#include "RoyalProgressionPolicy.h"
+#include "RoyalEstate.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 
 #include <algorithm>
@@ -71,6 +73,22 @@ void PrepareResidentDialogue(TradeDialogueState& trade, Actor* actor) {
     if (speaker == ResidentId::Hadrin && !state.marketRestored && GetWorldProgress().adult &&
         GetWorldProgress().ganonDefeated)
         append({ TradeKind::RestoreMarket, 0, kMarketRestorationPrice });
+    const auto world = GetWorldProgress();
+    if (speaker == ResidentId::Lethra && !state.zoraRestored && world.adult && world.water)
+        append({ TradeKind::RestoreZora, 0, kZoraRestorationPrice });
+    if (speaker == ResidentId::Maelin && !state.castleEstateOwned && IsRoyalEstateActive() && world.adult &&
+        world.ganonDefeated && state.marketRestored &&
+        RegionalCharterCount(state.stewardship) == kStewardshipRegionCount)
+        append({ TradeKind::BuyCastleEstate, 0, CastleEstatePrice(state) });
+    if (speaker == ResidentId::Aren) {
+        if (IsRoyalEstateActive())
+            append({ TradeKind::ReturnEstate, 0, 0 });
+        else if (GetRoyalEstateReadiness() == RoyalEstateReadiness::Ready)
+            append({ TradeKind::EnterEstate, 0, 0 });
+    }
+    const auto gift = NextResidentGift(state, speaker);
+    if (ValidGiftKind(gift) && ResidentAccessible(speaker, GetWorldProgress()))
+        append({ TradeKind::GiveGift, static_cast<uint32_t>(gift), kResidentGifts[static_cast<uint8_t>(gift)].price });
     if (trade.offerCount != 0)
         trade.offer = trade.offers[0];
 }
@@ -122,6 +140,29 @@ static std::string DescribeOfferDetails(const TradeOffer& offer) {
                    " bank rupees? The work restores "
                    "the streets and facades on your next visit. Shops and alleys remain closed.";
             break;
+        case TradeKind::GiveGift:
+            if (offer.propertyId >= kGiftKinds)
+                return {};
+            text = "Give " + std::string(kResidentGifts[offer.propertyId].name) + " for " + amount +
+                   " bank rupees? The gift is chosen for the recipient's region and needs. "
+                   "Each kind of gift can be given to this person once.";
+            break;
+        case TradeKind::RestoreZora:
+            text = "Restore the Domain's ordinary pools and waterfalls for " + amount +
+                   " bank rupees? The work appears on your next Domain visit. King Zora's red ice, "
+                   "the shop ice and the frozen Lake shortcut remain separate.";
+            break;
+        case TradeKind::BuyCastleEstate:
+            text = "Purchase the castle estate deed for " + amount +
+                   " bank rupees? Zelda and her household remain at home in the royal garden. "
+                   "This grants ownership and standing; unfinished castle rooms are not included.";
+            break;
+        case TradeKind::EnterEstate:
+            text = "Visit the royal garden? I can show you the household's route. There is no fee.";
+            break;
+        case TradeKind::ReturnEstate:
+            text = "Return to the castle approach? I will show you out. There is no fee.";
+            break;
     }
     return text;
 }
@@ -147,7 +188,8 @@ std::string DescribeResidentDialogue(Actor* actor, TradeDialogueState& trade, co
 
 bool HandleTradeChoice(PlayState* play, Actor* actor, TradeDialogueState& trade, uint16_t replyTextId) {
     if (play == nullptr || play != gPlayState || actor == nullptr || trade.offer.kind == TradeKind::None ||
-        trade.consumed || trade.offerCount == 0 || trade.offerCount > 3 || trade.offerIndex >= trade.offerCount ||
+        trade.consumed || trade.offerCount == 0 || trade.offerCount > kResidentOfferCapacity ||
+        trade.offerIndex >= trade.offerCount ||
         (trade.handledChoice && trade.lastChoiceFrame == play->gameplayFrames) ||
         trade.fileNum != gSaveContext.fileNum || play->msgCtx.talkActor != actor ||
         play->msgCtx.textId != trade.quoteTextId || Message_GetState(&play->msgCtx) != TEXT_STATE_CHOICE)
@@ -223,6 +265,26 @@ bool HandleTradeChoice(PlayState* play, Actor* actor, TradeDialogueState& trade,
                 break;
             case TradeKind::RestoreMarket:
                 action = Action::RestoreMarket;
+                amount = 0;
+                break;
+            case TradeKind::GiveGift:
+                action = Action::GiveGift;
+                amount = trade.offer.propertyId;
+                break;
+            case TradeKind::RestoreZora:
+                action = Action::RestoreZora;
+                amount = 0;
+                break;
+            case TradeKind::BuyCastleEstate:
+                action = Action::BuyCastleEstate;
+                amount = 0;
+                break;
+            case TradeKind::EnterEstate:
+                action = Action::EnterEstate;
+                amount = 0;
+                break;
+            case TradeKind::ReturnEstate:
+                action = Action::ReturnEstate;
                 amount = 0;
                 break;
             default:

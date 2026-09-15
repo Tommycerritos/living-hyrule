@@ -8,6 +8,10 @@
 #include "SocialPolicy.h"
 #include "MarketRestoration.h"
 #include "RegionalWardrobe.h"
+#include "ResidentGiftsPolicy.h"
+#include "RoyalProgressionPolicy.h"
+#include "ZoraRestoration.h"
+#include "RoyalEstate.h"
 
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 #include "soh/Notification/Notification.h"
@@ -34,10 +38,20 @@ static_assert(std::is_trivially_copyable_v<SaveContext>);
 
 static int pendingVictoryFile = -1;
 static bool victoryQueuedThisScene = false;
+struct PendingEstateTravel {
+    int file = -1;
+    int scene = -1;
+    int room = -1;
+    bool returning = false;
+    uint32_t frame = 0;
+    Vec3f origin{};
+};
+static PendingEstateTravel pendingEstateTravel;
 
 static void InitSave(bool) {
     pendingVictoryFile = -1;
     victoryQueuedThisScene = false;
+    pendingEstateTravel = {};
     gSaveContext.ship.livingHyrule = {};
 }
 
@@ -84,6 +98,12 @@ static bool IsSupportedAdventure() {
 WardrobeState* GetRegionalWardrobeStateForSave() {
     return GameInteractor::IsSaveLoaded(false) && IsSupportedAdventure() ? &gSaveContext.ship.livingHyrule.wardrobe
                                                                          : nullptr;
+}
+
+bool HasFundedZoraRestoration() {
+    const auto& economy = gSaveContext.ship.livingHyrule;
+    return GameInteractor::IsSaveLoaded(false) && IsSupportedAdventure() && IsValidState(economy) &&
+           economy.enabled == 1 && economy.zoraRestored == 1;
 }
 
 static bool CanPersistVictory(int fileNum) {
@@ -307,9 +327,45 @@ static std::string ApplyAction(Action action, uint32_t amount, const Status& sta
             return "The Market square's restoration is funded. Leave and return to see the finished streets. "
                    "Save your game to keep this investment.";
         }
+        case Action::RestoreZora: {
+            if (status.currentRegion != Region::Water)
+                return "Visit the river, Domain or lake to commission the Domain's water restoration.";
+            const auto readiness = GetZoraRestorationReadiness();
+            if (readiness != ZoraRestorationReadiness::Ready)
+                return ZoraRestorationReadinessText(readiness);
+            const auto result = FundZoraRestoration(economy, status.world,
+                                                    Flags_GetEventChkInf(EVENTCHKINF_USED_WATER_TEMPLE_BLUE_WARP));
+            if (result == Result::AlreadyRestored)
+                return "The Domain's water restoration is already funded. Enter the Domain again to see the work.";
+            if (result != Result::Success)
+                return ExplainResult(result);
+            return "The Domain's water restoration is funded. Its ordinary pools and falls will flow on your next "
+                   "visit. Red-ice quests stay separate. Save to keep the investment.";
+        }
+        case Action::BuyCastleEstate: {
+            if (!IsRoyalEstateActive())
+                return "Visit the royal garden to discuss the castle estate deed with Maelin.";
+            const auto readiness = GetRoyalEstateReadiness();
+            if (readiness != RoyalEstateReadiness::Ready)
+                return RoyalEstateReadinessText(readiness);
+            const auto result = BuyCastleEstate(economy, status.world, true);
+            if (result == Result::Unavailable)
+                return "The castle estate requires all eight regional charters and the funded Market restoration after "
+                       "Ganon's defeat.";
+            if (result != Result::Success)
+                return ExplainResult(result);
+            return "The castle estate deed is yours. Zelda and her household remain at home in the garden. Save "
+                   "normally to keep your ownership.";
+        }
+        case Action::EnterEstate:
+            return EnterRoyalEstate();
+        case Action::ReturnEstate:
+            return ReturnFromRoyalEstate();
         case Action::AcceptFavor:
         case Action::CompleteFavor:
             return "Speak directly to the resident to accept or hand over a delivery.";
+        case Action::GiveGift:
+            return "Speak directly to the person to choose and give a gift.";
         case Action::BuyDye:
         case Action::EquipDye: {
             if (amount > kRegionalStyleCount || (action == Action::BuyDye && amount == 0))
@@ -334,6 +390,10 @@ static std::string ApplyAction(Action action, uint32_t amount, const Status& sta
 }
 
 std::string PerformAction(Action action, uint32_t amount) {
+    // A safe route out must remain available even if the optional economy is
+    // disabled or unreadable. The travel module independently checks play/save.
+    if (action == Action::ReturnEstate)
+        return ReturnFromRoyalEstate();
     const auto status = GetStatus();
     return status.canUseLedger ? ApplyAction(action, amount, status) : status.reason;
 }
@@ -376,6 +436,20 @@ std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action
     // Actor identity, frozen quote and current conditions all have to agree.
     // Dialogue text alone never authorizes a transaction with another manager.
     switch (action) {
+        case Action::GiveGift: {
+            if (amount >= kGiftKinds || quotedAmount != kResidentGifts[amount].price)
+                return "That gift offer has changed. Please speak to me again.";
+            const auto kind = static_cast<GiftKind>(amount);
+            const auto result = GiveResidentGift(economy, speaker, kind, status.world);
+            if (result == Result::AlreadyCompleted)
+                return "I still remember that gift. There is no need to buy the same one again.";
+            if (result != Result::Success)
+                return ExplainResult(result);
+            return kind == kPreferredGifts[static_cast<uint32_t>(speaker)]
+                       ? "You remembered what matters to me. Thank you; I will put this gift to good use. Save to keep "
+                         "this kindness."
+                       : "That was thoughtful of you. Thank you for the gift. Save to keep this kindness.";
+        }
         case Action::AcceptFavor:
         case Action::CompleteFavor: {
             if (amount == 0 || amount > kFavorCount)
@@ -423,10 +497,63 @@ std::string PerformConversationAction(Actor* actor, uint16_t quoteTextId, Action
             if (speaker != ResidentId::Hadrin || quotedAmount != kMarketRestorationPrice)
                 return "Please speak to Hadrin in the Market about this work.";
             break;
+        case Action::RestoreZora:
+            if (speaker != ResidentId::Lethra || quotedAmount != kZoraRestorationPrice)
+                return "Please ask Lethra by the river about this restoration.";
+            break;
+        case Action::BuyCastleEstate:
+            if (speaker != ResidentId::Maelin || quotedAmount != CastleEstatePrice(economy))
+                return "Please speak to Maelin again for the current estate price.";
+            break;
+        case Action::EnterEstate:
+        case Action::ReturnEstate: {
+            const bool returning = action == Action::ReturnEstate;
+            if (speaker != ResidentId::Aren || quotedAmount != 0 || returning != IsRoyalEstateActive())
+                return "Please ask Captain Aren about the household's route.";
+            if (!returning) {
+                const auto readiness = GetRoyalEstateReadiness();
+                if (readiness != RoyalEstateReadiness::Ready)
+                    return RoyalEstateReadinessText(readiness);
+            }
+            pendingEstateTravel = { status.fileNum, gPlayState->sceneNum,       gPlayState->roomCtx.curRoom.num,
+                                    returning,      gPlayState->gameplayFrames, player->actor.world.pos };
+            return returning ? "Of course. Finish our conversation and I will show you back to the castle approach."
+                             : "The household is receiving visitors. Finish our conversation and I will show you to "
+                               "the royal garden.";
+        }
         default:
             return "This choice is available through your journal.";
     }
     return ApplyAction(action, amount, status);
+}
+
+static void FinishQueuedEstateTravel() {
+    if (pendingEstateTravel.file < 0)
+        return;
+    if (!GameInteractor::IsSaveLoaded(false) || !IsSupportedAdventure() ||
+        gSaveContext.fileNum != pendingEstateTravel.file || gPlayState->sceneNum != pendingEstateTravel.scene ||
+        gPlayState->roomCtx.curRoom.num != pendingEstateTravel.room || !LINK_IS_ADULT || IS_CUTSCENE_LAYER ||
+        gSaveContext.health <= 0 || gPlayState->gameplayFrames - pendingEstateTravel.frame > 1800) {
+        pendingEstateTravel = {};
+        return;
+    }
+    const Player* player = GET_PLAYER(gPlayState);
+    if (player == nullptr)
+        return;
+    const float dx = player->actor.world.pos.x - pendingEstateTravel.origin.x;
+    const float dz = player->actor.world.pos.z - pendingEstateTravel.origin.z;
+    if (dx * dx + dz * dz > 250.0f * 250.0f || gPlayState->transitionTrigger != TRANS_TRIGGER_OFF ||
+        gPlayState->transitionMode != TRANS_MODE_OFF) {
+        pendingEstateTravel = {};
+        return;
+    }
+    if (Message_GetState(&gPlayState->msgCtx) != TEXT_STATE_NONE || (player->stateFlags1 & PLAYER_STATE1_TALKING) ||
+        !IsSafeGameplay() || Ship::Context::GetRawInstance()->GetWindow()->GetGui()->GetMenuOrMenubarVisible())
+        return;
+    const bool returning = pendingEstateTravel.returning;
+    pendingEstateTravel = {};
+    const std::string feedback = returning ? ReturnFromRoyalEstate() : EnterRoyalEstate();
+    Notification::Emit({ .message = feedback });
 }
 
 static void UpdateRent() {
@@ -494,13 +621,16 @@ static void RegisterLivingHyrule() {
     GameInteractor::Instance->RegisterGameHookForID<GameInteractor::OnBossDefeat>(ACTOR_BOSS_GANON2,
                                                                                   QueueVictoryRecord);
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(PersistVictoryRecord);
+    GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayerUpdate>(FinishQueuedEstateTravel);
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnSceneInit>([](int16_t) {
         pendingVictoryFile = -1;
         victoryQueuedThisScene = false;
+        pendingEstateTravel = {};
     });
     GameInteractor::Instance->RegisterGameHook<GameInteractor::OnPlayDestroy>([]() {
         pendingVictoryFile = -1;
         victoryQueuedThisScene = false;
+        pendingEstateTravel = {};
     });
 }
 

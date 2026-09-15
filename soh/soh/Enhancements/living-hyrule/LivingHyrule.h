@@ -22,7 +22,12 @@ enum class Action {
     SetHighRent,
     RestoreMarket,
     BuyDye,
-    EquipDye
+    EquipDye,
+    GiveGift,
+    RestoreZora,
+    BuyCastleEstate,
+    EnterEstate,
+    ReturnEstate
 };
 
 struct Status {

@@ -58,7 +58,7 @@ inline nlohmann::json EncodeEconomy(const EconomyState& state) {
     }
 
     return {
-        { "schemaVersion", 4 },
+        { "schemaVersion", 5 },
         { "enabled", state.enabled != 0 },
         { "bankRupees", state.bankRupees },
         { "ownsKakarikoCottage", state.ownsKakarikoCottage != 0 },
@@ -79,6 +79,10 @@ inline nlohmann::json EncodeEconomy(const EconomyState& state) {
           { { "ownedStyles", state.wardrobe.ownedStyles }, { "equippedStyle", state.wardrobe.equippedStyle } } },
         { "stewardship",
           { { "charterMask", state.stewardship.charterMask }, { "treasury", state.stewardship.treasury } } },
+        { "zoraRestored", state.zoraRestored != 0 },
+        { "castleEstateOwned", state.castleEstateOwned != 0 },
+        { "givenGifts", state.givenGifts },
+        { "royalRecognition", state.royalRecognition },
     };
 }
 
@@ -96,7 +100,7 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
 
         uint64_t schemaVersion = 0;
         if (!SaveCodecDetail::ReadUnsigned(data.at("schemaVersion"), schemaVersion) ||
-            (schemaVersion < 1 || schemaVersion > 4) || !data.at("enabled").is_boolean() ||
+            (schemaVersion < 1 || schemaVersion > 5) || !data.at("enabled").is_boolean() ||
             !data.at("ownsKakarikoCottage").is_boolean()) {
             return false;
         }
@@ -158,6 +162,22 @@ inline bool DecodeEconomy(const nlohmann::json& data, EconomyState& output) noex
                 return false;
             for (uint8_t region = 0; region < kStewardshipRegionCount; ++region) {
                 if (!SaveCodecDetail::ReadUnsigned(treasury[region], candidate.stewardship.treasury[region]))
+                    return false;
+            }
+        }
+        // Schema five records finite gifts and further recovery. Earlier files
+        // keep their progress without inventing gifts, recognition or purchases.
+        if (schemaVersion >= 5) {
+            if (!data.at("zoraRestored").is_boolean() || !data.at("castleEstateOwned").is_boolean() ||
+                !SaveCodecDetail::ReadUnsigned(data.at("royalRecognition"), candidate.royalRecognition))
+                return false;
+            candidate.zoraRestored = data.at("zoraRestored").get<bool>();
+            candidate.castleEstateOwned = data.at("castleEstateOwned").get<bool>();
+            const auto& gifts = data.at("givenGifts");
+            if (!gifts.is_array() || gifts.size() != kSocialResidentCount)
+                return false;
+            for (uint32_t resident = 0; resident < kSocialResidentCount; ++resident) {
+                if (!SaveCodecDetail::ReadUnsigned(gifts[resident], candidate.givenGifts[resident]))
                     return false;
             }
         }

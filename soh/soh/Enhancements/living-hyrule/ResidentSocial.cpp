@@ -6,6 +6,7 @@
 #include "WaterDesertResidents.h"
 #include "RoyalAudience.h"
 #include "SocialPolicy.h"
+#include "RoyalProgressionPolicy.h"
 #include "soh/SaveManager.h"
 
 extern "C" {
@@ -60,16 +61,48 @@ std::string ResidentGreeting(Actor* actor) {
     if (!IsValidResident(id) || actor->update == nullptr || player == nullptr || player->talkActor != actor ||
         !(player->stateFlags1 & PLAYER_STATE1_TALKING) || !(IS_VANILLA || IS_MASTER_QUEST) || IS_CUTSCENE_LAYER ||
         gSaveContext.gameMode != GAMEMODE_NORMAL || gSaveContext.fileNum < 0 || gSaveContext.fileNum > 2 ||
-        !SaveManager::Instance->SaveFile_Exist(gSaveContext.fileNum) || !IsValidState(economy) || economy.enabled != 1)
+        SaveManager::Instance == nullptr || !SaveManager::Instance->SaveFile_Exist(gSaveContext.fileNum) ||
+        !IsValidState(economy) || economy.enabled != 1)
         return {};
     const bool known = HasMetResident(economy, id);
     MarkResidentMet(economy, id);
+    if (id == ResidentId::Zelda) {
+        const uint8_t newDeeds = RecognizeRoyalDeeds(economy, GetWorldProgress());
+        if (newDeeds != 0) {
+            std::string text = "^Word of your work has reached the household: ";
+            unsigned int mentioned = 0, remaining = 0;
+            for (uint8_t bit = 0; bit < kRoyalDeedNames.size(); ++bit) {
+                if ((newDeeds & (1u << bit)) == 0)
+                    continue;
+                if (mentioned == 2) {
+                    ++remaining;
+                    continue;
+                }
+                if (mentioned != 0)
+                    text += ", ";
+                text += kRoyalDeedNames[bit];
+                ++mentioned;
+            }
+            if (remaining != 0)
+                text += ", and " + std::to_string(remaining) + " other deeds";
+            return text + ". I will remember the care you have shown Hyrule.";
+        }
+        if (economy.castleEstateOwned)
+            return "^This estate is in your care now. My household remains here with you; let these gardens be a place "
+                   "where Hyrule can gather again.";
+        if (GetRapport(economy, id) >= kRoyalTrustedRapport)
+            return "^You have earned the household's trust. Maelin will reduce the castle estate price by a tenth when "
+                   "your regional work is complete.";
+    }
     const int rapport = GetRapport(economy, id);
     if (id == ResidentId::Bram && rapport <= -10)
         return "^That rent leaves little for leather and thread. I am falling behind. Please give me room to work.";
     if (id == ResidentId::Bram && rapport < 0)
         return "^The higher rent is hard on my trade. A full purse is not the only thing a household needs.";
     if (rapport >= kTrustedRapport) {
+        if (economy.zoraRestored && (id == ResidentId::Lethra || id == ResidentId::Neris))
+            return "^You funded the work to free our ordinary pools and waterfalls. The red ice is another matter, but "
+                   "the Domain has a future again.";
         if (economy.marketRestored) {
             switch (id) {
                 case ResidentId::Zelda:
@@ -117,6 +150,11 @@ std::string ResidentGreeting(Actor* actor) {
             "There is room in these records for kindness as well as coin."
         };
         static_assert(std::size(trusted) == kSocialResidentCount);
+        constexpr uint8_t residentFavor[] = { 1, 1, 2, 3, 4, 4, 3, 2, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 0, 0, 0 };
+        static_assert(std::size(residentFavor) == kSocialResidentCount);
+        const uint8_t favor = residentFavor[static_cast<size_t>(id)];
+        if (favor != 0 && !FavorCompleted(economy, favor))
+            return "^You have shown care for our work. I count you as a friend, and I will remember your kindness.";
         return "^" + std::string(trusted[static_cast<size_t>(id)]);
     }
     return known ? "^It is good to see a familiar face." : std::string{};

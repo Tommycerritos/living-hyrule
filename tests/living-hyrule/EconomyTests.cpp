@@ -34,7 +34,10 @@ bool Equal(const EconomyState& a, const EconomyState& b) {
            a.wardrobe.ownedStyles == b.wardrobe.ownedStyles && a.wardrobe.equippedStyle == b.wardrobe.equippedStyle &&
            a.stewardship.charterMask == b.stewardship.charterMask &&
            std::equal(std::begin(a.stewardship.treasury), std::end(a.stewardship.treasury),
-                      std::begin(b.stewardship.treasury));
+                      std::begin(b.stewardship.treasury)) &&
+           a.zoraRestored == b.zoraRestored && a.castleEstateOwned == b.castleEstateOwned &&
+           std::equal(std::begin(a.givenGifts), std::end(a.givenGifts), std::begin(b.givenGifts)) &&
+           a.royalRecognition == b.royalRecognition;
 }
 
 EconomyState Enabled(uint64_t bank = 0) {
@@ -188,9 +191,15 @@ void TestReloadAndFileIsolation() {
     EconomyState firstFile = Enabled(kCottagePrice);
     CHECK(BuyCottage(firstFile) == Result::Success);
     firstFile.wardrobe = { 0xa5, 8 };
-    firstFile.stewardship.charterMask = 0x81;
+    firstFile.stewardship.charterMask = 0xff;
     firstFile.stewardship.treasury[0] = 125;
     firstFile.stewardship.treasury[7] = kTreasuryLimit;
+    firstFile.marketRestored = 1;
+    firstFile.zoraRestored = 1;
+    firstFile.castleEstateOwned = 1;
+    firstFile.metResidents = kMetResidentsMask;
+    std::fill(std::begin(firstFile.givenGifts), std::end(firstFile.givenGifts), kGiftMask);
+    firstFile.royalRecognition = 0xff;
     for (int frame = 0; frame < 4000; ++frame) {
         CHECK(TickRent(firstFile) == 0);
     }
@@ -202,8 +211,14 @@ void TestReloadAndFileIsolation() {
     CHECK(Equal(firstFile, reloaded));
     reloaded.wardrobe.equippedStyle = 1;
     reloaded.stewardship.treasury[0] += 100;
+    reloaded.zoraRestored = 0;
+    reloaded.castleEstateOwned = 0;
+    reloaded.givenGifts[22] = 0;
+    reloaded.royalRecognition = 0;
     CHECK(firstFile.wardrobe.equippedStyle == 8 && firstFile.stewardship.treasury[0] == 125);
     CHECK(reloaded.wardrobe.ownedStyles == 0xa5 && reloaded.stewardship.treasury[7] == kTreasuryLimit);
+    CHECK(firstFile.zoraRestored == 1 && firstFile.castleEstateOwned == 1 && firstFile.givenGifts[22] == kGiftMask &&
+          firstFile.royalRecognition == 0xff);
     for (int frame = 0; frame < 7999; ++frame) {
         CHECK(TickRent(reloaded) == 0);
     }

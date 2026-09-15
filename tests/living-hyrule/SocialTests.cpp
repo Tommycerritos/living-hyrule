@@ -30,7 +30,10 @@ bool Equal(const EconomyState& a, const EconomyState& b) {
            a.wardrobe.ownedStyles == b.wardrobe.ownedStyles && a.wardrobe.equippedStyle == b.wardrobe.equippedStyle &&
            a.stewardship.charterMask == b.stewardship.charterMask &&
            std::equal(std::begin(a.stewardship.treasury), std::end(a.stewardship.treasury),
-                      std::begin(b.stewardship.treasury));
+                      std::begin(b.stewardship.treasury)) &&
+           a.zoraRestored == b.zoraRestored && a.castleEstateOwned == b.castleEstateOwned &&
+           std::equal(std::begin(a.givenGifts), std::end(a.givenGifts), std::begin(b.givenGifts)) &&
+           a.royalRecognition == b.royalRecognition;
 }
 EconomyState Enabled(uint64_t bank = 0) {
     EconomyState state{};

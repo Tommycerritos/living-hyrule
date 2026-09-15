@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SocialPolicy.h"
+#include "ResidentGiftsPolicy.h"
 
 namespace LivingHyrule {
 
@@ -15,8 +16,14 @@ enum class TradeKind : uint8_t {
     CompleteFavor,
     FairRent,
     HighRent,
-    RestoreMarket
+    RestoreMarket,
+    GiveGift,
+    RestoreZora,
+    BuyCastleEstate,
+    EnterEstate,
+    ReturnEstate
 };
+inline constexpr uint8_t kResidentOfferCapacity = 4;
 struct TradeOffer {
     TradeKind kind;
     uint32_t propertyId;
@@ -48,7 +55,7 @@ inline TradeDecision DecideTradeChoice(bool consumed, bool ownsDialogue, bool at
 // even if A is pressed at the same time; navigation never confirms an offer.
 inline TradeDecision DecideResidentChoice(bool consumed, bool shouldAdvance, bool freshA, bool cancelButton,
                                           uint8_t choice, uint8_t offerCount) {
-    if (consumed || !shouldAdvance || offerCount == 0 || offerCount > 3)
+    if (consumed || !shouldAdvance || offerCount == 0 || offerCount > kResidentOfferCapacity)
         return TradeDecision::Wait;
     if (cancelButton)
         return TradeDecision::Cancel;

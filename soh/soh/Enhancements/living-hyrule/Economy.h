@@ -4,6 +4,7 @@
 #include "SocialTypes.h"
 #include "RegionalWardrobeTypes.h"
 #include "StewardshipTypes.h"
+#include "RecoveryTypes.h"
 
 #include <cstdint>
 #include <limits>
@@ -50,7 +51,8 @@ inline bool IsValidState(const EconomyState& state) {
     if (state.enabled > 1 || state.ownsKakarikoCottage > 1 || state.bankRupees > kBankLimit ||
         state.rentalFrames >= kFramesPerRentPeriod || (state.ownedProperties & ~0xffffu) != 0 ||
         (state.repairedProperties & ~state.ownedProperties) != 0 || !IsValidSocialState(state) ||
-        !IsValidWardrobeState(state.wardrobe) || !IsValidStewardshipState(state.stewardship)) {
+        !IsValidWardrobeState(state.wardrobe) || !IsValidStewardshipState(state.stewardship) ||
+        !IsValidRecoveryState(state)) {
         return false;
     }
     for (unsigned int i = 0; i < 16; ++i) {

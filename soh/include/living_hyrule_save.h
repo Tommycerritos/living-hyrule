@@ -25,6 +25,10 @@ typedef struct {
     uint8_t marketRestored;
     LivingHyruleWardrobeData wardrobe;
     LivingHyruleStewardshipData stewardship;
+    uint8_t zoraRestored;
+    uint8_t castleEstateOwned;
+    uint8_t givenGifts[23];   /* Three once-per-resident gift kinds, low three bits. */
+    uint8_t royalRecognition; /* Eight once-per-save acknowledgments of completed work. */
 } LivingHyruleSaveData;
 
 #endif

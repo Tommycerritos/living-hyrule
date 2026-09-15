@@ -24,7 +24,7 @@ int main() {
     }
     // Native three-choice navigation is separate from the selected trade. No
     // topic-navigation row, skip input, cancellation, or repeated event buys it.
-    for (uint8_t count = 1; count <= 3; ++count) {
+    for (uint8_t count = 1; count <= kResidentOfferCapacity; ++count) {
         for (uint8_t choice = 0; choice < 4; ++choice) {
             CHECK(DecideResidentChoice(true, true, true, false, choice, count) == TradeDecision::Wait);
             CHECK(DecideResidentChoice(false, false, true, false, choice, count) == TradeDecision::Wait);
@@ -37,7 +37,7 @@ int main() {
         }
     }
     CHECK(DecideResidentChoice(false, true, true, false, 0, 0) == TradeDecision::Wait);
-    CHECK(DecideResidentChoice(false, true, true, false, 0, 4) == TradeDecision::Wait);
+    CHECK(DecideResidentChoice(false, true, true, false, 0, kResidentOfferCapacity + 1) == TradeDecision::Wait);
     EconomyState state{};
     WorldProgress child{};
     WorldProgress adult{ true, true, true, true, true, true, true, true, true };

@@ -11,7 +11,7 @@ namespace LivingHyrule {
 // Actor memory is zeroed by the engine, so no constructors or owning members.
 struct TradeDialogueState {
     TradeOffer offer;
-    TradeOffer offers[3];
+    TradeOffer offers[kResidentOfferCapacity];
     uint8_t offerCount;
     uint8_t offerIndex;
     bool cycled;

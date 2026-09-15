@@ -4,6 +4,10 @@
 #include "MarketRestoration.h"
 #include "RegionalWardrobe.h"
 #include "Stewardship.h"
+#include "ResidentGiftsPolicy.h"
+#include "RoyalProgressionPolicy.h"
+#include "RoyalEstate.h"
+#include "ZoraRestoration.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -42,6 +46,8 @@ class LivingHyruleWindow final : public Ship::GuiWindow {
     void DrawJournal(Status& status);
     void DrawRestoration(Status& status);
     void DrawWardrobe(Status& status);
+    void DrawDomainRestoration(Status& status);
+    void DrawRoyalEstate(Status& status);
 
     int mAmount = 10;
     int mLastFileNum = -2;
@@ -217,7 +223,7 @@ void LivingHyruleWindow::DrawJournal(Status& status) {
     if (!ImGui::CollapsingHeader("People and favors", ImGuiTreeNodeFlags_DefaultOpen))
         return;
     ImGui::TextWrapped("Speak to residents to accept and deliver favors. Choose Something else during a "
-                       "conversation to move between business and personal requests. Greetings do not earn trust.");
+                       "conversation to move between business, favors and gifts. Repeat greetings do not earn trust.");
     unsigned int completed = 0;
     for (uint8_t id = 1; id <= kFavorCount; ++id)
         completed += FavorCompleted(status.economy, id) ? 1u : 0u;
@@ -244,9 +250,94 @@ void LivingHyruleWindow::DrawJournal(Status& status) {
                           : rapport < 0              ? "strained"
                                                      : "acquainted",
                           rapport);
+        ImGui::PushID(static_cast<int>(index));
+        if (ImGui::TreeNode("Gifts remembered")) {
+            for (uint8_t kind = 0; kind < kGiftKinds; ++kind) {
+                const auto gift = static_cast<GiftKind>(kind);
+                ImGui::BulletText("%s: %s | %u bank rupees", GiftNameFor(id, gift),
+                                  GiftAlreadyGiven(status.economy, id, gift) ? "already given"
+                                                                             : "available in conversation",
+                                  kResidentGifts[kind].price);
+            }
+            ImGui::TextWrapped(
+                "Each gift can be given once to this person. A preferred gift earns 8 trust; others earn 4.");
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
     }
     if (met == 0)
         ImGui::TextWrapped("Your journal will remember the Living Hyrule residents you speak with.");
+    if (HasMetResident(status.economy, ResidentId::Zelda) && ImGui::TreeNode("Zelda's record of your work")) {
+        for (uint8_t bit = 0; bit < kRoyalDeedNames.size(); ++bit)
+            ImGui::BulletText("%s: %s", kRoyalDeedNames[bit],
+                              (status.economy.royalRecognition & (1u << bit)) != 0 ? "recognized"
+                                                                                   : "not yet recognized");
+        ImGui::TextWrapped("After your victory, Zelda recognizes completed work when you visit. Each deed earns 5 "
+                           "trust once. At 50 trust the household grants a 10%% estate discount.");
+        ImGui::TreePop();
+    }
+}
+
+void LivingHyruleWindow::DrawDomainRestoration(Status& status) {
+    ImGui::Separator();
+    if (!ImGui::CollapsingHeader("Restoring Zora's Domain"))
+        return;
+    ImGui::TextWrapped("Clear the Water Temple and use its blue warp, then fund work on the Domain's ordinary pools "
+                       "and waterfalls. Lethra by the river can commission it. King Zora's red ice, the shop's ice and "
+                       "the Lake shortcut stay separate.");
+    if (status.economy.zoraRestored) {
+        ImGui::TextWrapped(IsZoraRestorationActive()
+                               ? "The Domain's water restoration is active on this visit."
+                               : "Restoration is funded. Enter the Domain again as an adult to see the work.");
+        return;
+    }
+    ImGui::Text("Investment: %u bank rupees", kZoraRestorationPrice);
+    const auto readiness = GetZoraRestorationReadiness();
+    if (readiness != ZoraRestorationReadiness::Ready)
+        ImGui::TextWrapped("%s", ZoraRestorationReadinessText(readiness));
+    if (status.currentRegion != Region::Water)
+        ImGui::TextWrapped("Visit the river, Domain or lake to fund this work.");
+    DrawActionButton("Fund Domain water restoration", Action::RestoreZora, 0,
+                     readiness != ZoraRestorationReadiness::Ready || status.currentRegion != Region::Water ||
+                         status.economy.bankRupees < kZoraRestorationPrice,
+                     status);
+}
+
+void LivingHyruleWindow::DrawRoyalEstate(Status& status) {
+    ImGui::Separator();
+    // A return route remains visible and independent of the optional ledger.
+    if (IsRoyalEstateActive() && ImGui::Button("Return to the castle approach")) {
+        mFeedback = PerformAction(Action::ReturnEstate);
+        status = GetStatus();
+    }
+    if (!ImGui::CollapsingHeader("The royal household and castle estate"))
+        return;
+    ImGui::TextWrapped("After your victory and the Market restoration, Captain Aren can lead you to the royal garden. "
+                       "Zelda and Maelin receive visitors there by day; Aren keeps watch overnight. The garden "
+                       "entrance and this window both offer a route back.");
+    const auto readiness = GetRoyalEstateReadiness();
+    if (readiness != RoyalEstateReadiness::Ready)
+        ImGui::TextWrapped("%s", RoyalEstateReadinessText(readiness));
+    if (!IsRoyalEstateActive())
+        DrawActionButton("Visit the royal garden", Action::EnterEstate, 0, readiness != RoyalEstateReadiness::Ready,
+                         status);
+    if (!IsValidState(status.economy))
+        return;
+    if (status.economy.castleEstateOwned) {
+        ImGui::TextUnformatted("Castle estate: owned.");
+        ImGui::TextWrapped("Zelda and the household remain at home here. Your estate deed and standing are recorded "
+                           "with your other holdings.");
+        return;
+    }
+    ImGui::Text("Castle estate: %u bank rupees", CastleEstatePrice(status.economy));
+    ImGui::TextWrapped(
+        "Hold all eight regional charters, restore the Market and visit the royal garden to purchase the estate. The "
+        "royal household stays. The deed includes the garden estate; further castle rooms still need rebuilding.");
+    if (GetRapport(status.economy, ResidentId::Zelda) >= kRoyalTrustedRapport)
+        ImGui::TextUnformatted("Household friendship: 10% estate discount applied.");
+    const auto eligibility = CastleEstateEligibility(status.economy, status.world,
+                                                     IsRoyalEstateActive() && readiness == RoyalEstateReadiness::Ready);
+    DrawActionButton("Purchase castle estate", Action::BuyCastleEstate, 0, eligibility != Result::Success, status);
 }
 
 void LivingHyruleWindow::DrawRestoration(Status& status) {
@@ -355,11 +446,14 @@ void LivingHyruleWindow::DrawElement() {
     DrawJournal(status);
     DrawProperties(status);
     DrawRestoration(status);
+    DrawDomainRestoration(status);
+    DrawRoyalEstate(status);
     DrawWardrobe(status);
     DrawStewardshipControls(status);
 
     ImGui::Separator();
-    ImGui::TextWrapped("Save your game normally to keep your bank balance, deeds, repairs, relationships and favors.");
+    ImGui::TextWrapped("Save normally to keep your bank, deeds, repairs, gifts, relationships, favors, restoration, "
+                       "clothing and regional treasuries.");
     if (!mFeedback.empty()) {
         ImGui::Spacing();
         ImGui::TextWrapped("%s", mFeedback.c_str());
