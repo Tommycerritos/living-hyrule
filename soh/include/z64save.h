@@ -4,6 +4,7 @@
 #include <libultraship/libultra.h>
 #include "z64math.h"
 #include "z64audio.h"
+#include "living_hyrule_save.h"
 #include "soh/Enhancements/randomizer/randomizerEnums.h"
 #include "soh/Enhancements/gameplaystats.h"
 #include "soh/Enhancements/randomizer/randomizer_entrance.h"
@@ -278,6 +279,7 @@ typedef struct ShipSaveContextData {
     //TODO: Move non-rando specific flags to a new sohInf and move the remaining randomizerInf to ShipRandomizerSaveContextData
     u16 randomizerInf[(RAND_INF_MAX + 15) / 16];
     u8 resetToSpawn;
+    LivingHyruleSaveData livingHyrule;
 } ShipSaveContextData;
 
 #pragma endregion

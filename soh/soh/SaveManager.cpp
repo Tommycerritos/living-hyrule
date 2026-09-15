@@ -26,6 +26,7 @@ extern "C" {
 #include <fstream>
 #include <filesystem>
 #include <array>
+#include <climits>
 #include <mutex>
 
 extern "C" SaveContext gSaveContext;
@@ -1263,7 +1264,8 @@ void SaveManager::SaveFileThreaded(int fileNum, SaveContext* saveContext, int se
         for (auto& sectionHandlerPair : sectionSaveHandlers) {
             auto& saveFuncInfo = sectionHandlerPair.second;
             // Don't call SaveFuncs for sections that aren't tied to game save
-            if (!saveFuncInfo.saveWithBase || (saveFuncInfo.name == "randomizer" && !IS_RANDO)) {
+            if (!saveFuncInfo.saveWithBase || (saveFuncInfo.name == "randomizer" && !IS_RANDO) ||
+                (saveFuncInfo.condition && !saveFuncInfo.condition(saveContext))) {
                 continue;
             }
             nlohmann::json& sectionBlock = saveBlock["sections"][saveFuncInfo.name];
@@ -1277,6 +1279,11 @@ void SaveManager::SaveFileThreaded(int fileNum, SaveContext* saveContext, int se
         }
     } else {
         SaveFuncInfo svi = sectionSaveHandlers.find(sectionID)->second;
+        if (svi.condition && !svi.condition(saveContext)) {
+            delete saveContext;
+            saveMtx.unlock();
+            return;
+        }
         auto& sectionName = svi.name;
         auto sectionVersion = svi.version;
         // If section has a parentSection, it is a subsection. Load parentSection version and set sectionBlock to parent
@@ -1392,6 +1399,25 @@ void SaveManager::LoadFile(int fileNum) {
             case 1:
                 for (auto& block : saveBlock["sections"].items()) {
                     std::string sectionName = block.key();
+                    // Opt-in mod compatibility: validate the envelope before
+                    // narrowing its version or indexing its payload. Existing
+                    // sections without a fallback retain their normal behavior.
+                    auto registered = sectionLoadHandlers.find(sectionName);
+                    if (registered != sectionLoadHandlers.end() &&
+                        registered->second.contains(SECTION_VERSION_FALLBACK)) {
+                        const auto& envelope = block.value();
+                        bool supported = envelope.is_object() && envelope.contains("version") &&
+                                         envelope["version"].is_number_integer() && envelope["version"] >= 0 &&
+                                         envelope["version"] <= INT_MAX && envelope.contains("data") &&
+                                         envelope["data"].is_object() && !envelope["data"].empty();
+                        if (supported) {
+                            supported = registered->second.contains(envelope["version"].get<int>());
+                        }
+                        if (!supported) {
+                            registered->second.at(SECTION_VERSION_FALLBACK)();
+                            continue;
+                        }
+                    }
                     int sectionVersion = block.value()["version"];
                     if (sectionName == "randomizer" && sectionVersion != 1) {
                         sectionVersion = 1;
@@ -1482,7 +1508,7 @@ void SaveManager::AddLoadFunction(const std::string& name, int version, LoadFunc
 }
 
 int SaveManager::AddSaveFunction(const std::string& name, int version, SaveFunc func, bool saveWithBase,
-                                 int parentSection = -1) {
+                                 int parentSection, SaveCondition condition) {
     if (sectionRegistry.contains(name)) {
         SPDLOG_ERROR("Adding save function for section that already has one: {}", name);
         assert(false);
@@ -1495,7 +1521,7 @@ int SaveManager::AddSaveFunction(const std::string& name, int version, SaveFunc 
     } else {
         sectionIndex++;
     }
-    SaveFuncInfo sfi = { name, version, func, saveWithBase, parentSection };
+    SaveFuncInfo sfi = { name, version, func, saveWithBase, parentSection, condition };
     sectionSaveHandlers.emplace(index, sfi);
     sectionRegistry.emplace(name, index);
     return index;

@@ -3,6 +3,7 @@
 #include "z64save.h"
 
 #define SECTION_PARENT_NONE -1
+#define SECTION_VERSION_FALLBACK -1
 typedef struct {
     u8 valid;
     u16 deaths;
@@ -67,15 +68,17 @@ class SaveManager {
     using InitFunc = void (*)(bool isDebug);
     using LoadFunc = void (*)();
     using SaveFunc = void (*)(SaveContext* saveContext, int sectionID, bool fullSave);
+    using SaveCondition = bool (*)(const SaveContext* saveContext);
     using PostFunc = void (*)(int version);
 
-    typedef struct {
+    struct SaveFuncInfo {
         std::string name;
         int version;
         SaveManager::SaveFunc func;
         bool saveWithBase;
         int parentSection;
-    } SaveFuncInfo;
+        SaveCondition condition = nullptr;
+    };
 
     SaveManager();
 
@@ -92,12 +95,15 @@ class SaveManager {
     // Adds a function that is called when we are intializing a save, including when we are loading a save.
     void AddInitFunction(InitFunc func);
 
-    // Adds a function to handling loading a section
+    // SECTION_VERSION_FALLBACK optionally handles unsupported/invalid envelopes.
+    // The fallback should mark its snapshot data read-only without throwing.
     void AddLoadFunction(const std::string& name, int version, LoadFunc func);
 
     // Adds a function that is called when saving. This should only be called once for each function, the version is
     // filled in automatically.
-    int AddSaveFunction(const std::string& name, int version, SaveFunc func, bool saveWithBase, int parentSection);
+    // A false condition preserves the entire existing section, including its version.
+    int AddSaveFunction(const std::string& name, int version, SaveFunc func, bool saveWithBase,
+                        int parentSection = SECTION_PARENT_NONE, SaveCondition condition = nullptr);
 
     // Adds a function to be called after loading is complete. This is to handle any cleanup required from loading old
     // versions.

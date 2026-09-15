@@ -2,10 +2,108 @@
 
 ## Current scope
 
-Environment setup only. No game feature code has been changed. The original quest,
-dungeon progression, and required items must remain intact. Living Hyrule adds an
-optional economy, property ownership, social systems, regional recovery, and a
-post-Ganon world around that foundation.
+The first economy prototype is implemented on `feature/living-hyrule-economy`.
+It adds an optional bank account, one Kakariko cottage purchase, persistent
+ownership, and periodic rent. Full-game validation is still pending.
+
+The original quest, dungeon progression, songs, medallions, spiritual stones, and
+required items must remain intact. The wider life, social, recovery, and post-Ganon
+systems are future work. The creative direction is preserved in the
+[local creative vision](C:/ZeldaDev/docs/LIVING-HYRULE-VISION.md); the earlier
+[reference design](C:/ZeldaDev/docs/LIVING-HYRULE-REFERENCE.md) is also retained.
+
+## Using the first prototype
+
+Use a disposable development save in a normal adventure or Master Quest. Open
+the port menu, then **Enhancements > Living Hyrule > Open Living Hyrule**. Enable
+the economy separately for each save file. Existing saves without a Living Hyrule
+section begin with an empty, disabled ledger. Randomizer and Boss Rush are outside
+the supported prototype scope.
+
+The ledger shows the wallet, bank balance, cottage ownership, time to the next
+rent payment, and total rent earned. Banking is available throughout Hyrule;
+buying the cottage requires being in Kakariko Village. This is a ledger purchase
+representing ownership, with no physical seller, NPC dialogue changes, new
+interior, or alteration to an existing building yet.
+
+| Rule | Prototype behavior |
+| --- | --- |
+| Cottage price | 1,200 rupees, paid from the bank |
+| Rent | 25 rupees into the bank per ten minutes of active play |
+| Bank limit | 999,999,999 rupees |
+| Wallet | Existing wallet capacity; withdrawals must fit |
+| Child Link | Property purchase and rent are available |
+| Adult Link | Purchase and rent stop until the Shadow Medallion is obtained |
+| Recovery | Ownership and savings survive the crisis; resuming after the Shadow Temple is free in this prototype |
+| Economy pause | Preserves money, ownership, lifetime earnings, and partial rent progress |
+
+Prices and income are provisional tuning, not a finished economic balance.
+There is no offline payout or payment for the seven-year age transition. Rent
+counts eligible player updates at 20 ticks per second, stopping during dialogue,
+blocking cutscenes, pause screens, transitions, game over, the port menu, and
+Kakariko's adult crisis. A completed rent period is consumed even if the bank has
+no room; only rupees actually credited count toward total earnings.
+
+Deposits and withdrawals require a positive amount, sufficient funds, and room
+in the destination. The ledger waits for the game's current rupee-counting
+animation to finish before allowing a transaction. Paused gameplay and unreadable
+ledger data also make its controls unavailable.
+
+**Save your game normally after making changes.** A transaction does not trigger
+an immediate autosave. The normal full save stores the wallet and Living Hyrule
+state together; quitting or reloading without saving discards subsequent changes
+under the game's usual save rules.
+
+## Save architecture and compatibility
+
+The economy is a fixed-size, plain C data structure (`LivingHyruleSaveData`) stored
+inline at `SaveContext.ship.livingHyrule`. It contains the enabled flag, bank
+balance, cottage ownership, partial rent ticks, and lifetime credited rent. It
+has no pointers or dynamic containers and remains safe to copy with the game's
+save snapshot.
+
+`SaveManager` takes a copy of `SaveContext` before its background save work. The
+Living Hyrule save callback reads that snapshot, so a full save captures the
+wallet and ledger from the same point in time. Transfers change the settled
+wallet and bank together on the game thread. The prototype does not persist the
+ledger separately from the wallet or store economy state in global settings.
+
+The registered custom section is `livingHyrule`, with a stable outer section
+version of **1**. Its `data.economy` payload currently uses inner
+`schemaVersion: 1`. Future economy migrations should dispatch on the inner schema
+while keeping the outer registration stable, unless an engine-level version
+change has been explicitly designed and reviewed.
+
+The save codec validates required fields, boolean types, unsigned integer ranges,
+the bank limit, and rent progress before changing the live state. Unsupported or
+malformed inner economy payloads make the ledger read-only. A small, opt-in
+`SaveManager` fallback handles invalid, empty, or future-version Living Hyrule
+section envelopes the same way. The snapshot-based save condition runs before
+the section's version or data can be rewritten, retaining the unreadable section
+when the rest of the game is saved instead of replacing it with a fresh account.
+Existing saves with no optional section remain valid and opt out by default.
+
+These paths preserve unsupported data; they do not interpret or migrate an
+unknown format. The registered outer version remains **1**, and unrelated saves
+and sections retain their upstream handling. File-wide malformed JSON or damage
+outside the optional Living Hyrule section still belongs to upstream save
+recovery. Keep development backups when checking save compatibility and rollback.
+
+Implementation is isolated under `soh/soh/Enhancements/living-hyrule`, apart from
+the fixed-size save member in `soh/include/z64save.h`, its C header, and the opt-in
+fallback loader and save condition added to `SaveManager`.
+`RegisterMenuInitFunc` adds the ledger window and sidebar, `RegisterShipInitFunc`
+registers persistence and gameplay hooks, and `OnPlayerUpdate` advances rent only
+when the gameplay conditions above are met. The build's recursive source discovery
+finds the new module without a manual source list.
+
+## Verification
+
+Native economy-model and save-codec tests passed. Full-game validation is pending,
+including the complete build, the ledger's in-game controls, normal save/reload,
+save-slot separation, Child/Adult Link recovery behavior, and vanilla progression.
+Use disposable development saves for those checks. A passing model or codec test
+alone does not establish that these integration paths work in the running game.
 
 ## Repository and branches
 
@@ -13,6 +111,7 @@ post-Ganon world around that foundation.
 - `origin`: https://github.com/Tommycerritos/living-hyrule.git (personal fork).
 - `develop`: untouched official baseline, tracking `upstream/develop`.
 - `living-hyrule`: integration branch for reviewed project changes.
+- `feature/living-hyrule-economy`: current bank and first cottage prototype.
 - `feature/<topic>`: one bounded feature per branch and pull request into `living-hyrule`.
 - `fix/<topic>` and `docs/<topic>`: focused fixes and documentation.
 - `baseline/shipwright-2026-09-14`: pinned original source commit for comparison.
@@ -53,26 +152,29 @@ Do not copy the upstream asset-upload workflow or register this PC as a public
 self-hosted runner. Later CI may compile source and run synthetic-data tests;
 ROM-dependent playtests remain local.
 
-## Handoff: architecture first
+## Next phases
 
-The full reference design is preserved locally at
-`C:\ZeldaDev\docs\LIVING-HYRULE-REFERENCE.md`.
+These systems are planned, not implemented by the economy prototype:
 
-Before implementing features, investigate the pinned source's mod hooks, custom
-save serialization and versioning, actor spawning, dialogue, UI, wallet arithmetic,
-and post-Ganon state. Produce an architecture proposal and phased plan.
+1. **Cottage seller and interaction:** connect the ledger transaction to a
+   physical NPC seller and dialogue, choose the property's location and access,
+   and validate ownership through save/reload without disrupting existing actors
+   or quest dialogue.
+2. **Paid regional reconstruction:** keep the original dungeon or story solution
+   as the first recovery requirement, then add reconstruction paid for by Link.
+   The current free Shadow Temple trade reopening is only the first story link.
+3. **More properties and livelihoods:** homes, shops, businesses, farms, regional
+   price and income tuning, expenses, recovering population, and travelers.
+4. **Rapport and regional influence:** relationships, reputation, tenant treatment,
+   gifts and quests, dialogue consequences, and eventual regional stewardship.
+5. **Persistent postgame:** a safe but ruined Castle Town after Ganondorf, staged
+   restoration, Zelda available in the world, castle life and rapport, and eventual
+   castle ownership that preserves Zelda's place there.
+6. **Equipment and harder combat:** optional regional gear, more dangerous and
+   varied encounters, meaningful healing and preparation costs, and carefully
+   tuned consequences. Original story items and required progression remain intact.
 
-Starting points in the pinned source (verify suitability during the audit):
-`soh/soh/SaveManager.h`, `soh/soh/SaveManager.cpp`,
-`soh/soh/Enhancements/game-interactor/GameInteractor.h`, and
-`soh/soh/SohGui/SohMenu.h`. See upstream `docs/MODDING.md` for its code-mod workflow.
-
-First proposed vertical slice: **one Kakariko property, one seller, bank account,
-purchase, persistent ownership, periodic rent, and save/reload**. Define rollback,
-save migration, time advancement, and balance rules before coding. Use a disposable
-development save. Test that vanilla quest progression and existing saves survive.
-
-Later phases: generalized properties, businesses, rapport, population, regional
-reconstruction, persistent postgame, regional stewardship, Zelda/castle expansion,
-and optional equipment. Asset reuse requires permission and attribution; Nintendo
-assets stay on each player's own computer.
+Review each phase's architecture, save migration, compatibility, asset permissions,
+and balance before integrating it. See upstream `docs/MODDING.md` for its code-mod
+workflow. Asset reuse requires permission and attribution; Nintendo assets stay
+on each player's own computer.
