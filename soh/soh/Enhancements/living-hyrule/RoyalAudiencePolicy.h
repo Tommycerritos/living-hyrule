@@ -12,6 +12,7 @@ struct RoyalAudienceContext {
     bool supportedAdventure = false;
     bool normalScene = false;
     bool castleApproach = false;
+    bool royalGarden = false;
     bool daytime = false;
     WorldProgress world{};
     EconomyState economy{};
@@ -25,9 +26,9 @@ constexpr uint8_t RoyalResidentBit(RoyalResidentId id) {
 // and a completed time-split list cannot substitute for actual Ganon evidence.
 // The engine adapter supplies that evidence through GetWorldProgress().
 inline uint8_t RoyalResidentMaskFor(const RoyalAudienceContext& context) {
-    if (!context.enabled || !context.supportedAdventure || !context.normalScene || !context.castleApproach ||
-        !context.world.adult || !context.world.ganonDefeated || !IsValidState(context.economy) ||
-        context.economy.enabled != 1) {
+    if (!context.enabled || !context.supportedAdventure || !context.normalScene ||
+        (!context.castleApproach && !context.royalGarden) || !context.world.adult || !context.world.ganonDefeated ||
+        !IsValidState(context.economy) || context.economy.enabled != 1) {
         return 0;
     }
     const uint8_t guard = RoyalResidentBit(RoyalResidentId::Aren);

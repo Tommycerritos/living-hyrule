@@ -1,4 +1,6 @@
 #include "RoyalAudience.h"
+#include "RoyalEstate.h"
+#include "RoyalEstatePolicy.h"
 #include "LivingHyrule.h"
 #include "ResidentSocial.h"
 #include "Stewardship.h"
@@ -68,6 +70,7 @@ uint8_t DesiredResidents(const PlayState* play) {
                           gSaveContext.fileNum >= 0 && gSaveContext.fileNum <= 2 && !IS_CUTSCENE_LAYER &&
                           play->roomCtx.curRoom.num == 0;
     context.castleApproach = play != nullptr && play->sceneNum == SCENE_OUTSIDE_GANONS_CASTLE;
+    context.royalGarden = IsRoyalEstateActive() && GetRoyalEstateReadiness() == RoyalEstateReadiness::Ready;
     context.daytime = IS_DAY;
     context.world = GetWorldProgress();
     context.economy = gSaveContext.ship.livingHyrule;
@@ -477,7 +480,12 @@ void UpdatePopulation() {
         if (actor->update != nullptr && IsRoyalResidentActor(actor))
             present |= RoyalResidentBit(GetRoyalResidentId(actor));
     }
-    for (const auto& placement : placements) {
+    for (auto placement : placements) {
+        if (IsRoyalEstateActive()) {
+            const auto& garden = kRoyalGardenPlacements[static_cast<size_t>(placement.id)];
+            placement.position = { garden.x, garden.y, garden.z };
+            placement.yaw = garden.yaw;
+        }
         const uint8_t bit = RoyalResidentBit(placement.id);
         if ((desired & bit) == 0 || (present & bit) != 0)
             continue;
