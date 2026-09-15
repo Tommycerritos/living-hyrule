@@ -1,11 +1,12 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Configure','Build','Stage','Run','All')][string]$Action = 'All',
+    [ValidateSet('Configure','Assets','Build','Stage','Run','All')][string]$Action = 'All',
     [ValidateSet('Debug','Release')][string]$Configuration = 'Debug',
     [string]$Workspace = 'C:\ZeldaDev'
 )
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+$toolchain = Get-Content -LiteralPath (Join-Path $repo 'docs\LIVING-HYRULE-TOOLCHAIN.json') -Raw | ConvertFrom-Json
 $build = Join-Path $Workspace 'build\living-hyrule-vs2022'
 $runtime = Join-Path $Workspace 'runtime\development'
 $python = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python312\python.exe'
@@ -28,12 +29,17 @@ function Invoke-CMake {
 
 if ($Action -in 'Configure','All') {
     Invoke-CMake -S $repo -B $build -G 'Visual Studio 17 2022' -T v143 -A x64 `
-        "-DVCPKG_ROOT=$Workspace/tools/vcpkg" "-DPython3_EXECUTABLE=$python" `
+        "-DVCPKG_ROOT=$Workspace/tools/vcpkg" "-DVCPKG_PINNED_COMMIT=$($toolchain.vcpkgCommit)" "-DPython3_EXECUTABLE=$python" `
         "-DSOH_ROM_PATH=$Workspace/roms" "-DCMAKE_INSTALL_PREFIX=$runtime"
 }
-if ($Action -in 'Build','All') {
-    # ROM extraction happens only in the external build directory.
+if ($Action -eq 'Assets') {
     Invoke-CMake --build $build --config $Configuration --target ExtractAssets --parallel 2
+}
+if ($Action -in 'Build','All') {
+    # Reuse local game archives on ordinary edits; Assets explicitly refreshes them.
+    $hasGameArchive = (Test-Path (Join-Path $build 'soh\oot.o2r')) -or (Test-Path (Join-Path $build 'soh\oot-mq.o2r'))
+    $assetTarget = if ($hasGameArchive) { 'GenerateSohOtr' } else { 'ExtractAssets' }
+    Invoke-CMake --build $build --config $Configuration --target $assetTarget --parallel 2
     Invoke-CMake --build $build --config $Configuration --target soh --parallel 2
 }
 if ($Action -in 'Stage','All') {

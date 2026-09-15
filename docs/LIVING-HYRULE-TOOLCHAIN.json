@@ -1,0 +1,19 @@
+{
+  "upstreamRepository": "https://github.com/HarbourMasters/Shipwright.git",
+  "upstreamCommit": "4c04c7615fbbda07992de88e57283e7d0b3820c7",
+  "libultrashipCommit": "62e973aeb4a53ad4d22bb91e2d9373ecdfcd246c",
+  "torchCommit": "2ab12fe9660aec04e02ee89fe81baed304a1a1d6",
+  "vcpkgRepository": "https://github.com/microsoft/vcpkg.git",
+  "vcpkgCommit": "9e44ec0e9f247d77c230ced0ee66c76296837807",
+  "platform": "Windows x64",
+  "visualStudio": "Build Tools 2022 17.14.40",
+  "toolset": "v143 / 14.44.35207",
+  "windowsSdk": "10.0.26100.0",
+  "cmakeProject": "3.31.6-msvc6",
+  "cmakeStandalone": "4.4.3",
+  "python": "3.12.10",
+  "git": "2.55.0.windows.3",
+  "githubCli": "2.96.0",
+  "configuration": "Debug",
+  "vcpkgTriplet": "x64-windows-static"
+}

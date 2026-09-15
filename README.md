@@ -1,3 +1,10 @@
+# Living Hyrule development foundation
+
+This fork prepares the development environment for Living Hyrule. No mod features
+have been implemented yet. Start with the [setup and handoff guide](README-LIVING-HYRULE.md).
+
+---
+
 ![Ship of Harkinian](docs/shiptitle.darkmode.png#gh-dark-mode-only)
 ![Ship of Harkinian](docs/shiptitle.lightmode.png#gh-light-mode-only)
 

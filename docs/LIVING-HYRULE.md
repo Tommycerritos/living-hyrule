@@ -22,6 +22,13 @@ recorded revisions, and validate a clean build before merging engine updates.
 Do not automatically rebase published integration history. Release tags should
 identify validated builds; do not commit binaries or package game assets.
 
+The starting toolchain and dependency-manager revisions are recorded in
+`docs/LIVING-HYRULE-TOOLCHAIN.json`. To reproduce the dependency setup elsewhere,
+clone Microsoft vcpkg into the external workspace's `tools/vcpkg`, check out the
+recorded commit in detached mode, and bootstrap it before running `Build.ps1`.
+Use `git submodule update --init --recursive` in the source checkout. The installed
+library inventory is recorded locally in `C:\ZeldaDev\docs\dependency-versions.txt`.
+
 ## Local data policy
 
 `C:\ZeldaDev\roms`, `assets`, `runtime`, `build`, and `backups` are outside Git.

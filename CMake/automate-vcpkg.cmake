@@ -121,10 +121,22 @@ macro(_install_or_update_vcpkg)
         # If a reproducible build is desired (and potentially old libraries are # ok), uncomment the
         # following line and pin the vcpkg repository to a specific githash.
         # execute_process(COMMAND git checkout 745a0aea597771a580d0b0f4886ea1e3a94dbca6 WORKING_DIRECTORY ${VCPKG_ROOT})
-    else()
-        # The following command has no effect if the vcpkg repository is in a detached head state.
+    elseif(NOT VCPKG_PINNED_COMMIT)
+        # Preserve automatic updates for builds that do not request a revision lock.
         message(STATUS "Auto-updating vcpkg in ${VCPKG_ROOT}")
         execute_process(COMMAND git pull WORKING_DIRECTORY ${VCPKG_ROOT})
+    endif()
+
+    # Living Hyrule builds opt into an explicit revision lock. Modern Git can
+    # fast-forward a detached HEAD during pull, so detaching alone is not a lock.
+    if(VCPKG_PINNED_COMMIT)
+        execute_process(COMMAND git rev-parse HEAD WORKING_DIRECTORY ${VCPKG_ROOT}
+            OUTPUT_VARIABLE _vcpkg_revision OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE _vcpkg_revision_result)
+        if(NOT _vcpkg_revision_result EQUAL 0 OR NOT _vcpkg_revision STREQUAL VCPKG_PINNED_COMMIT)
+            message(FATAL_ERROR "Check out vcpkg revision ${VCPKG_PINNED_COMMIT} in ${VCPKG_ROOT} before building.")
+        endif()
+        message(STATUS "Using pinned vcpkg revision ${_vcpkg_revision}")
     endif()
 
     if(NOT EXISTS ${VCPKG_ROOT}/README.md)
