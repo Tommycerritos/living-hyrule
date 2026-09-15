@@ -15,12 +15,16 @@ subagents are authorized. Read the full vision at
 
 ## Current work, September 14, regional-property increment
 
-Branch: `feature/living-hyrule-regional-properties`, based on integration commit
-5598595a5. Four automated test suites pass. Full configuration/build is currently
-running; inspect `C:\ZeldaDev\logs\overnight-properties-configure.log` and
-`overnight-properties-build.log`, and active compiler processes before starting
-another build. Current executable is still the earlier economy/resident build
-until this checkpoint is updated with staging success.
+Code commit: `f71940314285356c2faa781126d17a175d30555d`, feature branch
+`feature/living-hyrule-regional-properties`. **All four automated test suites
+passed; full configuration, compilation, linking and staging completed with
+exit code zero.** The new development executable is installed at
+`C:\ZeldaDev\runtime\development\soh.exe` and its SHA256 matches the compiled
+output: `e4cf088245f7b3c8aa72f357f1fe8ca9dedfd8f5b8f913079b6dd822603c3257`.
+The code is backed up on the source-only GitHub feature branch. See the local
+`C:\ZeldaDev\docs\LATEST-BUILD.json` receipt. The embedded revision is 5598595
+because configuration preceded the source commit; the receipt identifies the
+actual compiled code. The game has not been started.
 
 Implemented in source in this increment:
 
@@ -46,14 +50,25 @@ existing valid file1 economy enabled. Other save fields and configuration were
 preserved, backed up under `C:\ZeldaDev\backups\before-overnight-20260914-221608`.
 The game was closed before changes and has not been started.
 
-## Required finish for this increment
+## Verification and preservation
 
-1. Finish full build; resolve errors if any. Run Stage only after success and
-   while the development executable is closed. Never invoke Run.
-2. Verify output/runtime hashes and update the local latest-build receipt.
-3. Update README/status/changelog to accurately describe this increment.
-4. Review the diff, commit source only through repository guards, push feature
-   branch and integrate into living-hyrule when the build is successful.
+The four suites cover banking, strict save migration, population policy, and
+regional property/repair/income behavior. Full-game integration compiled and
+linked successfully. They do not prove runtime rendering or gameplay acceptance.
+The local collision resource was inspected without executing the game: all
+three existing Kakariko candidates have nearby walkable ground at the expected
+heights. Full body clearance and actor placement remain runtime checks.
+
+The previous successful executable is backed up alongside the original config
+and save in `C:\ZeldaDev\backups\before-overnight-20260914-221608`.
+Exact JSON comparison confirms only the two intended configuration leaves and
+file1's economy enable flag changed. No game progress or money was altered.
+The current debug profile has existing money/health cheats; those were preserved.
+
+Build timing: changing the shared save structure triggers a full engine rebuild.
+The upstream packaging steps also scan/copy more than 20,000 metadata files and
+can spend several minutes without new log output. Check child process state
+before assuming a stalled build. Do not start a second concurrent build.
 
 ## Next concrete implementation priorities
 

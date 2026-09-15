@@ -4,9 +4,8 @@ An optional life and economy expansion for Ocarina of Time, based on
 [HarbourMasters/Shipwright](https://github.com/HarbourMasters/Shipwright).
 
 **Status: banking, a rental cottage, three Kakariko residents, and sixteen regional
-property/business deeds are implemented.** The new regional build is being
-compiled and staged; see the [current worklog](docs/LIVING-HYRULE-WORKLOG.md) for
-its verification state. Gameplay acceptance belongs to the owner. The game is
+property/business deeds are implemented.** The regional build compiled, linked and was installed successfully. All four
+automated test suites passed; see the [current worklog](docs/LIVING-HYRULE-WORKLOG.md). Gameplay acceptance belongs to the owner. The game is
 not launched automatically.
 The original main quest, dungeons, story items, and progression remain the foundation.
 
